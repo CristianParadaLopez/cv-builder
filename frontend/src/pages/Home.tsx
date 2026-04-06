@@ -26,7 +26,7 @@ export default function Home() {
           <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center">
             <span className="text-white font-bold text-lg">S</span>
           </div>
-          <span className="text-xl font-bold text-gray-800">Skillara AI</span>
+          <span className="text-xl font-bold text-gray-800">ULS AI</span>
         </div>
         <button
           onClick={() => navigate("/builder")}
