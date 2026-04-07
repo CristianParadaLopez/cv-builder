@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { generateCV, editCV } from "../services/claude.service";
 
+// eu chambea
 export async function handleGenerateCV(req: Request, res: Response) {
   try {
     const { formData, style } = req.body;
