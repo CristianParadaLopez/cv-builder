@@ -3,6 +3,8 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const MODEL = process.env.AI_MODEL || "meta-llama/llama-3.3-70b-instruct:free";
+// definimos el modelo de IA en una constante que estamos usando para generar y editar los CVs. 
+// Se puede configurar mediante la variable de entorno AI_MODEL, nosotros podemos cambiar el modelo actualizacion el archivo .env
 
 const styleGuides: Record<string, string> = {
   moderno: `
@@ -48,6 +50,7 @@ export async function generateCV(formData: any, style: string = "moderno"): Prom
     baseURL: "https://openrouter.ai/api/v1",
     apiKey: process.env.OPENROUTER_API_KEY,
   });
+  // obtenemos la guía de estilo correspondiente al estilo seleccionado por el usuario, si no se encuentra el estilo se usa el estilo moderno por defecto
 
   const styleGuide = styleGuides[style] || styleGuides.moderno;
 
@@ -83,6 +86,8 @@ export async function editCV(currentHTML: string, userPrompt: string): Promise<s
     baseURL: "https://openrouter.ai/api/v1",
     apiKey: process.env.OPENROUTER_API_KEY,
   });
+  // este método recibe el HTML actual del CV y una instrucción del usuario sobre qué cambios quiere hacer.
+  //  El prompt le indica a la IA que solo devuelva el HTML modificado completo, sin explicaciones ni bloques markdown, y que mantenga todos los datos del CV intactos, solo cambiando lo que se indica en la instrucción del usuario.
 
   const prompt = `Eres un experto diseñador de CVs. El usuario quiere modificar su CV en HTML.
 
@@ -103,6 +108,7 @@ INSTRUCCIONES:
     messages: [{ role: "user", content: prompt }],
     max_tokens: 4000,
   });
+  // la respuesta de la IA es el HTML completo del CV con las modificaciones solicitadas por el usuario, este HTML se envía al frontend para actualizar la vista previa del CV.
 
   return response.choices[0].message.content || "";
 }

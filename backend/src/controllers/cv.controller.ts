@@ -15,6 +15,8 @@ export async function handleGenerateCV(req: Request, res: Response) {
     return res.status(500).json({ error: "Error al generar el CV" });
   }
 }
+// este controlador maneja la generación del CV, recibe los datos del formulario y el estilo seleccionado por el usuario,
+// llama a la función generateCV del servicio de IA y devuelve el HTML generado al frontend.
 
 export async function handleEditCV(req: Request, res: Response) {
   try {
@@ -29,3 +31,6 @@ export async function handleEditCV(req: Request, res: Response) {
     return res.status(500).json({ error: "Error al editar el CV" });
   }
 }
+// este controlador maneja la edición del CV, recibe el HTML actual del CV y una instrucción del usuario sobre qué cambios quiere hacer,
+// llama a la función editCV del servicio de IA y devuelve el HTML modificado al frontend.
+// los errores en ambos controladores se capturan y se devuelve una respuesta JSON con el mensaje de error.
