@@ -1,10 +1,94 @@
+// services/claude.service.ts
 import OpenAI from "openai";
+import type { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 import dotenv from "dotenv";
 dotenv.config();
 
-const MODEL = process.env.AI_MODEL || "meta-llama/llama-3.3-70b-instruct:free";
-// definimos el modelo de IA en una constante que estamos usando para generar y editar los CVs. 
-// Se puede configurar mediante la variable de entorno AI_MODEL, nosotros podemos cambiar el modelo actualizacion el archivo .env
+// ─── Configuración de keys y modelos con fallback ───────────────────────────
+
+const API_KEYS = [
+  { name: process.env.DEV1_NAME || "Cristian",  apiKey: process.env.OPENROUTER_API_KEY_1 || "" },
+  { name: process.env.DEV2_NAME || "Luis",      apiKey: process.env.OPENROUTER_API_KEY_2 || "" },
+  { name: process.env.DEV3_NAME || "Eunice",    apiKey: process.env.OPENROUTER_API_KEY_3 || "" },
+  { name: process.env.DEV4_NAME || "Tania",     apiKey: process.env.OPENROUTER_API_KEY_4 || "" },
+  { name: process.env.DEV5_NAME || "Katherine", apiKey: process.env.OPENROUTER_API_KEY_5 || "" },
+].filter((k) => k.apiKey !== "");
+
+const MODELS = (
+  process.env.AI_MODELS ||
+  "meta-llama/llama-3.1-8b-instruct:free,deepseek/deepseek-r1-0528:free,google/gemini-2.0-flash-exp:free"
+)
+  .split(",")
+  .map((m) => m.trim())
+  .filter(Boolean);
+
+// Log de diagnóstico al arrancar
+console.log("🔧 Keys cargadas:");
+API_KEYS.forEach((k) => console.log(`  ✅ [${k.name}]`));
+console.log(`📦 Modelos: ${MODELS.join(", ")}`);
+
+// Códigos HTTP que indican rate limit o sin tokens
+const RATE_LIMIT_CODES = [429, 402, 503];
+
+class RateLimitError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "RateLimitError";
+  }
+}
+
+// ─── Función core con fallback automático ───────────────────────────────────
+
+async function callWithFallback(
+  messages: ChatCompletionMessageParam[]
+): Promise<string> {
+  const errors: string[] = [];
+
+  for (const keyConfig of API_KEYS) {
+    for (const model of MODELS) {
+      try {
+        console.log(`🔑 Intentando con [${keyConfig.name}] + [${model}]...`);
+
+        const client = new OpenAI({
+          baseURL: "https://openrouter.ai/api/v1",
+          apiKey: keyConfig.apiKey,
+        });
+
+        const response = await client.chat.completions.create({
+          model,
+          messages,
+          max_tokens: 4000,
+        });
+
+        // Verificar error embebido (OpenRouter a veces responde 200 con error dentro)
+        const raw = response as any;
+        if (raw?.error) {
+          const code = raw.error.code || raw.error.status;
+          if (RATE_LIMIT_CODES.includes(Number(code))) {
+            throw new RateLimitError(`Sin tokens: ${raw.error.message}`);
+          }
+          throw new Error(`Error API: ${raw.error.message}`);
+        }
+
+        const result = response.choices[0].message.content || "";
+        console.log(`✅ Éxito con [${keyConfig.name}] + [${model}]`);
+        console.log(`📄 Primeros 200 chars:`, result.substring(0, 200));
+        console.log(`📏 Longitud total: ${result.length} chars`);
+        return result;
+
+      } catch (error) {
+        const msg = `[${keyConfig.name}][${model}]: ${(error as Error).message}`;
+        errors.push(msg);
+        console.warn(`⚠️  ${msg}`);
+        continue;
+      }
+    }
+  }
+
+  throw new Error(`❌ Todos los modelos y keys fallaron:\n${errors.join("\n")}`);
+}
+
+// ─── Style guides ────────────────────────────────────────────────────────────
 
 const styleGuides: Record<string, string> = {
   moderno: `
@@ -45,13 +129,9 @@ const styleGuides: Record<string, string> = {
   `,
 };
 
-export async function generateCV(formData: any, style: string = "moderno"): Promise<string> {
-  const client = new OpenAI({
-    baseURL: "https://openrouter.ai/api/v1",
-    apiKey: process.env.OPENROUTER_API_KEY,
-  });
-  // obtenemos la guía de estilo correspondiente al estilo seleccionado por el usuario, si no se encuentra el estilo se usa el estilo moderno por defecto
+// ─── Funciones públicas ──────────────────────────────────────────────────────
 
+export async function generateCV(formData: any, style: string = "moderno"): Promise<string> {
   const styleGuide = styleGuides[style] || styleGuides.moderno;
 
   const prompt = `Eres un experto diseñador de CVs. Genera un CV profesional y visualmente atractivo en HTML + CSS completo.
@@ -72,23 +152,10 @@ INSTRUCCIONES TÉCNICAS:
 - El resultado debe verse como un CV real listo para imprimir o exportar a PDF
 - NO uses imágenes externas ni fuentes de Google Fonts, solo fuentes del sistema`;
 
-  const response = await client.chat.completions.create({
-    model: MODEL,
-    messages: [{ role: "user", content: prompt }],
-    max_tokens: 4000,
-  });
-
-  return response.choices[0].message.content || "";
+  return callWithFallback([{ role: "user" as const, content: prompt }]);
 }
 
 export async function editCV(currentHTML: string, userPrompt: string): Promise<string> {
-  const client = new OpenAI({
-    baseURL: "https://openrouter.ai/api/v1",
-    apiKey: process.env.OPENROUTER_API_KEY,
-  });
-  // este método recibe el HTML actual del CV y una instrucción del usuario sobre qué cambios quiere hacer.
-  //  El prompt le indica a la IA que solo devuelva el HTML modificado completo, sin explicaciones ni bloques markdown, y que mantenga todos los datos del CV intactos, solo cambiando lo que se indica en la instrucción del usuario.
-
   const prompt = `Eres un experto diseñador de CVs. El usuario quiere modificar su CV en HTML.
 
 CV ACTUAL:
@@ -103,12 +170,5 @@ INSTRUCCIONES:
 - Mantén todos los datos del CV intactos, solo cambia lo que se indica
 - El resultado debe ser HTML válido y completo`;
 
-  const response = await client.chat.completions.create({
-    model: MODEL,
-    messages: [{ role: "user", content: prompt }],
-    max_tokens: 4000,
-  });
-  // la respuesta de la IA es el HTML completo del CV con las modificaciones solicitadas por el usuario, este HTML se envía al frontend para actualizar la vista previa del CV.
-
-  return response.choices[0].message.content || "";
+  return callWithFallback([{ role: "user" as const, content: prompt }]);
 }
