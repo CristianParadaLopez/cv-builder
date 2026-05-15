@@ -23,3 +23,10 @@ app.use(errorHandler);
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
+process.on("uncaughtException", (err) => {
+  console.error("Error no capturado:", err);
+});
+
+process.on("unhandledRejection", (reason) => {
+  console.error("Promesa rechazada:", reason);
+});
