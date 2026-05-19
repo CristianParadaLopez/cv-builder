@@ -8,11 +8,12 @@ datasource db {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
+  id        Int         @id @default(autoincrement())
   name      String
-  email     String   @unique
-  createdAt DateTime @default(now())
+  email     String      @unique
+  createdAt DateTime    @default(now())
   cvs       CV[]
+  profiles  CVProfile[]
 }
 
 model CV {
@@ -21,6 +22,16 @@ model CV {
   user      User     @relation(fields: [userId], references: [id])
   html      String
   prompt    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CVProfile {
+  id        String   @id @default(cuid())
+  label     String
+  data      Json
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

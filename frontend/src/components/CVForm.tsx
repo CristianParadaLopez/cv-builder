@@ -72,33 +72,40 @@ export default function CVForm({ onSubmit, loading }: Props) {
   const sectionClass = "bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-4";
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4" autoComplete="on">
+
       <div className={sectionClass}>
         <h2 className="text-lg font-bold text-blue-700 mb-4">Datos Personales</h2>
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className={labelClass}>Nombre completo</label>
-            <input className={inputClass} value={form.name} onChange={(e) => updateField("name", e.target.value)} required />
+            <input className={inputClass} name="name" autoComplete="name"
+              value={form.name} onChange={(e) => updateField("name", e.target.value)} required />
           </div>
           <div>
             <label className={labelClass}>Título profesional</label>
-            <input className={inputClass} value={form.title} onChange={(e) => updateField("title", e.target.value)} required />
+            <input className={inputClass} name="job-title" autoComplete="organization-title"
+              value={form.title} onChange={(e) => updateField("title", e.target.value)} required />
           </div>
           <div>
             <label className={labelClass}>Email</label>
-            <input className={inputClass} type="email" value={form.email} onChange={(e) => updateField("email", e.target.value)} required />
+            <input className={inputClass} name="email" autoComplete="email" type="email"
+              value={form.email} onChange={(e) => updateField("email", e.target.value)} required />
           </div>
           <div>
             <label className={labelClass}>Teléfono</label>
-            <input className={inputClass} value={form.phone} onChange={(e) => updateField("phone", e.target.value)} />
+            <input className={inputClass} name="tel" autoComplete="tel"
+              value={form.phone} onChange={(e) => updateField("phone", e.target.value)} />
           </div>
           <div className="col-span-2">
             <label className={labelClass}>Ubicación</label>
-            <input className={inputClass} value={form.location} onChange={(e) => updateField("location", e.target.value)} />
+            <input className={inputClass} name="location" autoComplete="address-level2"
+              value={form.location} onChange={(e) => updateField("location", e.target.value)} />
           </div>
           <div className="col-span-2">
             <label className={labelClass}>Resumen profesional</label>
-            <textarea className={inputClass} rows={3} value={form.summary} onChange={(e) => updateField("summary", e.target.value)} />
+            <textarea className={inputClass} name="summary" autoComplete="off" rows={3}
+              value={form.summary} onChange={(e) => updateField("summary", e.target.value)} />
           </div>
         </div>
       </div>
@@ -110,23 +117,28 @@ export default function CVForm({ onSubmit, loading }: Props) {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className={labelClass}>Empresa</label>
-                <input className={inputClass} value={exp.company} onChange={(e) => updateExperience(i, "company", e.target.value)} />
+                <input className={inputClass} name={`company-${i}`} autoComplete="organization"
+                  value={exp.company} onChange={(e) => updateExperience(i, "company", e.target.value)} />
               </div>
               <div>
                 <label className={labelClass}>Cargo</label>
-                <input className={inputClass} value={exp.position} onChange={(e) => updateExperience(i, "position", e.target.value)} />
+                <input className={inputClass} name={`position-${i}`} autoComplete="organization-title"
+                  value={exp.position} onChange={(e) => updateExperience(i, "position", e.target.value)} />
               </div>
               <div>
                 <label className={labelClass}>Desde</label>
-                <input className={inputClass} value={exp.startDate} onChange={(e) => updateExperience(i, "startDate", e.target.value)} />
+                <input className={inputClass} name={`exp-start-${i}`} autoComplete="off"
+                  value={exp.startDate} onChange={(e) => updateExperience(i, "startDate", e.target.value)} />
               </div>
               <div>
                 <label className={labelClass}>Hasta</label>
-                <input className={inputClass} value={exp.endDate} onChange={(e) => updateExperience(i, "endDate", e.target.value)} />
+                <input className={inputClass} name={`exp-end-${i}`} autoComplete="off"
+                  value={exp.endDate} onChange={(e) => updateExperience(i, "endDate", e.target.value)} />
               </div>
               <div className="col-span-2">
                 <label className={labelClass}>Descripción</label>
-                <textarea className={inputClass} rows={2} value={exp.description} onChange={(e) => updateExperience(i, "description", e.target.value)} />
+                <textarea className={inputClass} name={`exp-desc-${i}`} autoComplete="off" rows={2}
+                  value={exp.description} onChange={(e) => updateExperience(i, "description", e.target.value)} />
               </div>
             </div>
           </div>
@@ -144,19 +156,23 @@ export default function CVForm({ onSubmit, loading }: Props) {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className={labelClass}>Institución</label>
-                <input className={inputClass} value={edu.institution} onChange={(e) => updateEducation(i, "institution", e.target.value)} />
+                <input className={inputClass} name={`institution-${i}`} autoComplete="organization"
+                  value={edu.institution} onChange={(e) => updateEducation(i, "institution", e.target.value)} />
               </div>
               <div>
                 <label className={labelClass}>Título obtenido</label>
-                <input className={inputClass} value={edu.degree} onChange={(e) => updateEducation(i, "degree", e.target.value)} />
+                <input className={inputClass} name={`degree-${i}`} autoComplete="off"
+                  value={edu.degree} onChange={(e) => updateEducation(i, "degree", e.target.value)} />
               </div>
               <div>
                 <label className={labelClass}>Desde</label>
-                <input className={inputClass} value={edu.startDate} onChange={(e) => updateEducation(i, "startDate", e.target.value)} />
+                <input className={inputClass} name={`edu-start-${i}`} autoComplete="off"
+                  value={edu.startDate} onChange={(e) => updateEducation(i, "startDate", e.target.value)} />
               </div>
               <div>
                 <label className={labelClass}>Hasta</label>
-                <input className={inputClass} value={edu.endDate} onChange={(e) => updateEducation(i, "endDate", e.target.value)} />
+                <input className={inputClass} name={`edu-end-${i}`} autoComplete="off"
+                  value={edu.endDate} onChange={(e) => updateEducation(i, "endDate", e.target.value)} />
               </div>
             </div>
           </div>
@@ -173,21 +189,24 @@ export default function CVForm({ onSubmit, loading }: Props) {
           <div>
             <label className={labelClass}>Habilidades</label>
             {form.skills.map((s, i) => (
-              <input key={i} className={`${inputClass} mb-2`} value={s} onChange={(e) => updateListItem("skills", i, e.target.value)} placeholder="Ej: Trabajo en equipo" />
+              <input key={i} className={`${inputClass} mb-2`} name={`skill-${i}`} autoComplete="off"
+                value={s} onChange={(e) => updateListItem("skills", i, e.target.value)} placeholder="Ej: Trabajo en equipo" />
             ))}
             <button type="button" onClick={() => addListItem("skills")} className="text-blue-600 text-sm hover:underline">+ Agregar</button>
           </div>
           <div>
             <label className={labelClass}>Herramientas</label>
             {form.tools.map((t, i) => (
-              <input key={i} className={`${inputClass} mb-2`} value={t} onChange={(e) => updateListItem("tools", i, e.target.value)} placeholder="Ej: React, Figma" />
+              <input key={i} className={`${inputClass} mb-2`} name={`tool-${i}`} autoComplete="off"
+                value={t} onChange={(e) => updateListItem("tools", i, e.target.value)} placeholder="Ej: React, Figma" />
             ))}
             <button type="button" onClick={() => addListItem("tools")} className="text-blue-600 text-sm hover:underline">+ Agregar</button>
           </div>
           <div>
             <label className={labelClass}>Idiomas</label>
             {form.languages.map((l, i) => (
-              <input key={i} className={`${inputClass} mb-2`} value={l} onChange={(e) => updateListItem("languages", i, e.target.value)} placeholder="Ej: Español, Inglés" />
+              <input key={i} className={`${inputClass} mb-2`} name={`language-${i}`} autoComplete="off"
+                value={l} onChange={(e) => updateListItem("languages", i, e.target.value)} placeholder="Ej: Español, Inglés" />
             ))}
             <button type="button" onClick={() => addListItem("languages")} className="text-blue-600 text-sm hover:underline">+ Agregar</button>
           </div>

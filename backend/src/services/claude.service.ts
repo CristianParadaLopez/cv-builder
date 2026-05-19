@@ -7,10 +7,10 @@ dotenv.config();
 // ─── Configuración de keys y modelos con fallback ───────────────────────────
 
 const API_KEYS = [
-  { name: process.env.DEV1_NAME || "Cristian",  apiKey: process.env.OPENROUTER_API_KEY_1 || "" },
-  { name: process.env.DEV2_NAME || "Luis",      apiKey: process.env.OPENROUTER_API_KEY_2 || "" },
-  { name: process.env.DEV3_NAME || "Eunice",    apiKey: process.env.OPENROUTER_API_KEY_3 || "" },
-  { name: process.env.DEV4_NAME || "Tania",     apiKey: process.env.OPENROUTER_API_KEY_4 || "" },
+  { name: process.env.DEV1_NAME || "Cristian", apiKey: process.env.OPENROUTER_API_KEY_1 || "" },
+  { name: process.env.DEV2_NAME || "Luis", apiKey: process.env.OPENROUTER_API_KEY_2 || "" },
+  { name: process.env.DEV3_NAME || "Eunice", apiKey: process.env.OPENROUTER_API_KEY_3 || "" },
+  { name: process.env.DEV4_NAME || "Tania", apiKey: process.env.OPENROUTER_API_KEY_4 || "" },
   { name: process.env.DEV5_NAME || "Katherine", apiKey: process.env.OPENROUTER_API_KEY_5 || "" },
 ].filter((k) => k.apiKey !== "");
 
@@ -71,10 +71,16 @@ async function callWithFallback(
         }
 
         const result = response.choices[0].message.content || "";
+        const cleanResult = result
+          .replace(/^```html\s*/i, "")
+          .replace(/^```\s*/i, "")
+          .replace(/```\s*$/i, "")
+          .trim();
+
         console.log(`✅ Éxito con [${keyConfig.name}] + [${model}]`);
-        console.log(`📄 Primeros 200 chars:`, result.substring(0, 200));
-        console.log(`📏 Longitud total: ${result.length} chars`);
-        return result;
+        console.log(`📄 Primeros 200 chars:`, cleanResult.substring(0, 200));
+        console.log(`📏 Longitud total: ${cleanResult.length} chars`);
+        return cleanResult;
 
       } catch (error) {
         const msg = `[${keyConfig.name}][${model}]: ${(error as Error).message}`;
