@@ -3,7 +3,13 @@ import { useLocation, useNavigate } from "react-router-dom";
 export default function Preview() {
   const location = useLocation();
   const navigate = useNavigate();
-  const html = location.state?.html as string;
+  const rawHtml = location.state?.html as string;
+
+  const html = rawHtml
+  ?.replace(/^```html\s*/i, "")
+  .replace(/^```\s*/i, "")
+  .replace(/```\s*$/i, "")
+  .trim();
 
   if (!html) {
     navigate("/builder");

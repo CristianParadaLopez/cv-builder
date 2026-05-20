@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import cvRoutes from "./routes/cv.routes";
+
 import { errorHandler } from "./middleware/errorHandler";
 
 dotenv.config();
@@ -14,6 +15,7 @@ app.use(express.json());
 
 app.use("/api/cv", cvRoutes);
 
+
 app.get("/", (req, res) => {
   res.json({ message: "Skillara AI Backend corriendo" });
 });
@@ -23,6 +25,7 @@ app.use(errorHandler);
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
+
 process.on("uncaughtException", (err) => {
   console.error("Error no capturado:", err);
 });
