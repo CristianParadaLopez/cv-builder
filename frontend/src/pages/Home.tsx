@@ -1,144 +1,282 @@
 import { useNavigate } from "react-router-dom";
+import { Sparkles, FileText, Wand2, Download } from "lucide-react";
 
 const features = [
-  { icon: "🤖", title: "Generado con IA", desc: "La inteligencia artificial redacta y diseña tu CV automáticamente" },
-  { icon: "🎨", title: "4 estilos visuales", desc: "Moderno, clásico, minimalista o creativo — vos elegís" },
-  { icon: "✏️", title: "Edición por prompts", desc: "Cambiá colores, tipografía y diseño escribiendo en lenguaje natural" },
-  { icon: "📄", title: "Exportá en PDF", desc: "Descargá tu CV listo para enviar a empresas o instituciones" },
+  {
+    icon: <Sparkles size={28} />,
+    title: "IA Inteligente",
+    desc: "Tu CV se genera automáticamente con diseño y contenido optimizado.",
+  },
+  {
+    icon: <FileText size={28} />,
+    title: "Plantillas modernas",
+    desc: "Elegí entre distintos estilos visuales profesionales.",
+  },
+  {
+    icon: <Wand2 size={28} />,
+    title: "Edición con prompts",
+    desc: "Personalizá colores, estilos y textos escribiendo naturalmente.",
+  },
+  {
+    icon: <Download size={28} />,
+    title: "Exportación rápida",
+    desc: "Descargá tu CV listo para enviar en PDF.",
+  },
 ];
 
 const steps = [
-  { n: "01", title: "Elegí tu estilo", desc: "Seleccioná entre 4 diseños profesionales" },
-  { n: "02", title: "Completá tu info", desc: "Llenás el formulario con tus datos" },
-  { n: "03", title: "La IA genera tu CV", desc: "En segundos tenés un CV profesional" },
-  { n: "04", title: "Personalizá y descargá", desc: "Editá con prompts y exportá en PDF" },
+  {
+    number: "01",
+    title: "Elegí un diseño",
+    desc: "Seleccioná el estilo que mejor te represente.",
+  },
+  {
+    number: "02",
+    title: "Completá tus datos",
+    desc: "Agregá experiencia, educación y habilidades.",
+  },
+  {
+    number: "03",
+    title: "La IA trabaja",
+    desc: "Generamos un CV profesional automáticamente.",
+  },
+  {
+    number: "04",
+    title: "Descargá y compartí",
+    desc: "Exportalo en PDF y empezá a postularte.",
+  },
 ];
 
 export default function Home() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#0b1020] text-white overflow-hidden">
+      
+      {/* BACKGROUND */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,#2563eb33,transparent_35%),radial-gradient(circle_at_bottom_left,#7c3aed33,transparent_35%)]" />
 
-      {/* NAV */}
-      <nav className="flex items-center justify-between px-10 py-5 border-b border-gray-100">
+      {/* NAVBAR */}
+      <nav className="relative z-10 flex items-center justify-between px-8 py-6 border-b border-white/10 backdrop-blur-md">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center">
-            <span className="text-white font-bold text-lg">S</span>
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center font-bold">
+            S
           </div>
-          <span className="text-xl font-bold text-gray-800">ULS AI</span>
+          <h1 className="text-xl font-bold tracking-wide">
+            Skillara AI
+          </h1>
         </div>
+
         <button
           onClick={() => navigate("/builder")}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl text-sm font-semibold transition"
+          className="bg-white text-black px-5 py-2.5 rounded-xl font-semibold hover:scale-105 transition"
         >
-          Crear CV gratis
+          Crear CV
         </button>
       </nav>
 
       {/* HERO */}
-      <section className="flex flex-col items-center text-center px-6 py-24 bg-gradient-to-b from-blue-50 to-white">
-        <span className="bg-blue-100 text-blue-700 text-xs font-semibold px-4 py-1.5 rounded-full mb-6">
-          100% gratuito · Sin registro
-        </span>
-        <h1 className="text-5xl font-bold text-gray-900 mb-6 leading-tight max-w-3xl">
-          Tu CV profesional generado por{" "}
-          <span className="text-blue-600">Inteligencia Artificial</span>
-        </h1>
-        <p className="text-gray-500 text-lg mb-10 max-w-xl">
-          Completá tu información, elegí un estilo y la IA se encarga del resto.
-          CV y portafolio listos en segundos.
-        </p>
-        <div className="flex gap-4">
-          <button
-            onClick={() => navigate("/builder")}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-xl text-lg font-bold transition shadow-lg shadow-blue-200"
-          >
-            Crear mi CV ahora →
-          </button>
-        </div>
+      <section className="relative z-10 px-6 lg:px-16 py-24">
+        <div className="grid lg:grid-cols-2 gap-16 items-center">
 
-        {/* Preview card */}
-        <div className="mt-16 bg-white rounded-2xl shadow-xl border border-gray-100 p-6 max-w-lg w-full">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">J</div>
-            <div className="text-left">
-              <p className="font-bold text-gray-800 text-sm">Juan Pérez</p>
-              <p className="text-gray-400 text-xs">Desarrollador Frontend</p>
+          {/* LEFT */}
+          <div>
+            <div className="inline-flex items-center gap-2 bg-white/10 border border-white/10 px-4 py-2 rounded-full text-sm text-gray-200 mb-6">
+              ✨ Gratis • IA integrada • Sin registro
             </div>
-            <span className="ml-auto bg-green-100 text-green-700 text-xs px-3 py-1 rounded-full font-medium">✓ Generado</span>
+
+            <h1 className="text-5xl lg:text-6xl font-black leading-tight mb-6">
+              Creá un CV moderno con{" "}
+              <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                Inteligencia Artificial
+              </span>
+            </h1>
+
+            <p className="text-gray-300 text-lg leading-relaxed max-w-xl mb-10">
+              Diseños modernos, generación automática y personalización inteligente.
+              Todo listo en minutos.
+            </p>
+
+            <div className="flex flex-wrap gap-4">
+              <button
+                onClick={() => navigate("/builder")}
+                className="bg-gradient-to-r from-blue-500 to-purple-600 px-8 py-4 rounded-2xl font-bold hover:scale-105 transition shadow-2xl"
+              >
+                Empezar ahora →
+              </button>
+
+            </div>
           </div>
-          <div className="space-y-2">
-            {["Experiencia laboral", "Educación", "Habilidades", "Herramientas"].map((s) => (
-              <div key={s} className="flex items-center gap-3">
-                <div className="w-2 h-2 bg-blue-600 rounded-full" />
-                <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-blue-200 rounded-full" style={{ width: `${Math.random() * 40 + 60}%` }} />
+
+          {/* RIGHT CARD */}
+          <div className="relative">
+            <div className="absolute inset-0 blur-3xl bg-blue-500/20 rounded-full" />
+
+            <div className="relative bg-white/10 border border-white/10 backdrop-blur-xl rounded-3xl p-6 shadow-2xl">
+              
+              {/* TOP */}
+              <div className="flex items-center gap-4 mb-8">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-xl font-bold">
+                  J
                 </div>
-                <span className="text-xs text-gray-400">{s}</span>
+
+                <div>
+                  <h3 className="font-bold text-lg">Juan Pérez</h3>
+                  <p className="text-gray-300 text-sm">
+                    Frontend Developer
+                  </p>
+                </div>
+
+                <div className="ml-auto bg-green-500/20 text-green-300 text-xs px-3 py-1 rounded-full">
+                  Generado
+                </div>
               </div>
-            ))}
+
+              {/* CONTENT */}
+              <div className="space-y-5">
+                {[
+                  "Experiencia",
+                  "Educación",
+                  "Habilidades",
+                  "Proyectos",
+                ].map((item) => (
+                  <div key={item}>
+                    <div className="flex justify-between text-sm mb-2 text-gray-300">
+                      <span>{item}</span>
+                      <span>95%</span>
+                    </div>
+
+                    <div className="w-full h-3 bg-white/10 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-blue-400 to-purple-500 rounded-full"
+                        style={{
+                          width: `${Math.random() * 20 + 80}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* FOOT */}
+              <div className="mt-8 grid grid-cols-2 gap-4">
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+                  <p className="text-2xl font-bold">4</p>
+                  <p className="text-sm text-gray-400">Diseños</p>
+                </div>
+
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+                  <p className="text-2xl font-bold">PDF</p>
+                  <p className="text-sm text-gray-400">Exportación</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
       {/* FEATURES */}
-      <section className="px-10 py-20 max-w-5xl mx-auto">
-        <h2 className="text-3xl font-bold text-center text-gray-800 mb-12">
-          Todo lo que necesitás para destacar
-        </h2>
-        <div className="grid grid-cols-2 gap-6">
-          {features.map((f) => (
-            <div key={f.title} className="bg-gray-50 rounded-2xl p-6 border border-gray-100 hover:border-blue-200 transition">
-              <div className="text-3xl mb-3">{f.icon}</div>
-              <h3 className="font-bold text-gray-800 mb-2">{f.title}</h3>
-              <p className="text-gray-500 text-sm">{f.desc}</p>
+      <section className="relative z-10 px-6 lg:px-16 py-24">
+        <div className="text-center mb-16">
+          <h2 className="text-4xl font-bold mb-4">
+            Todo lo que necesitás
+          </h2>
+          <p className="text-gray-400">
+            Herramientas modernas para crear un CV impactante.
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-6">
+          {features.map((feature) => (
+            <div
+              key={feature.title}
+              className="bg-white/5 border border-white/10 rounded-3xl p-6 hover:bg-white/10 transition"
+            >
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center mb-5 text-blue-300">
+                {feature.icon}
+              </div>
+
+              <h3 className="font-bold text-lg mb-3">
+                {feature.title}
+              </h3>
+
+              <p className="text-gray-400 text-sm leading-relaxed">
+                {feature.desc}
+              </p>
             </div>
           ))}
         </div>
       </section>
 
       {/* STEPS */}
-      <section className="bg-blue-600 px-10 py-20">
-        <h2 className="text-3xl font-bold text-center text-white mb-12">
-          ¿Cómo funciona?
-        </h2>
-        <div className="grid grid-cols-4 gap-6 max-w-4xl mx-auto">
-          {steps.map((s) => (
-            <div key={s.n} className="text-center">
-              <div className="w-12 h-12 bg-white bg-opacity-20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <span className="text-white font-bold">{s.n}</span>
+      <section className="relative z-10 px-6 lg:px-16 py-24">
+        <div className="bg-gradient-to-r from-blue-600 to-purple-700 rounded-[40px] p-10 lg:p-16">
+
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold mb-4">
+              ¿Cómo funciona?
+            </h2>
+            <p className="text-blue-100">
+              En menos de 2 minutos tendrás tu CV listo.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-8">
+            {steps.map((step) => (
+              <div
+                key={step.number}
+                className="bg-white/10 rounded-3xl p-6 border border-white/10"
+              >
+                <div className="text-5xl font-black text-white/20 mb-4">
+                  {step.number}
+                </div>
+
+                <h3 className="font-bold text-lg mb-3">
+                  {step.title}
+                </h3>
+
+                <p className="text-blue-100 text-sm leading-relaxed">
+                  {step.desc}
+                </p>
               </div>
-              <h3 className="font-bold text-white mb-2 text-sm">{s.title}</h3>
-              <p className="text-blue-100 text-xs">{s.desc}</p>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </section>
 
       {/* CTA */}
-      <section className="flex flex-col items-center text-center px-6 py-20">
-        <h2 className="text-3xl font-bold text-gray-800 mb-4">
-          ¿Listo para crear tu CV?
+      <section className="relative z-10 px-6 py-24 text-center">
+        <h2 className="text-5xl font-black mb-6">
+          Empezá gratis hoy
         </h2>
-        <p className="text-gray-500 mb-8">Gratis, sin registro y en menos de 2 minutos.</p>
+
+        <p className="text-gray-400 max-w-2xl mx-auto mb-10 text-lg">
+          Creá un CV profesional con IA y destacate entre cientos de candidatos.
+        </p>
+
         <button
           onClick={() => navigate("/builder")}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-xl text-lg font-bold transition"
+          className="bg-white text-black px-10 py-5 rounded-2xl text-lg font-bold hover:scale-105 transition"
         >
-          Empezar ahora →
+          Crear mi CV →
         </button>
       </section>
 
       {/* FOOTER */}
-      <footer className="border-t border-gray-100 px-10 py-6 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 bg-blue-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-xs">S</span>
+      <footer className="relative z-10 border-t border-white/10 px-8 py-8 flex flex-col lg:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center font-bold">
+            S
           </div>
-          <span className="text-sm text-gray-500">Skillara AI © 2026</span>
+
+          <span className="text-gray-400 text-sm">
+            Skillara AI © 2026
+          </span>
         </div>
-        <p className="text-xs text-gray-400">Proyecto universitario — Herramientas de IA para el Desarrollo Web</p>
+
+        <p className="text-gray-500 text-sm text-center">
+          Plataforma universitaria impulsada con Inteligencia Artificial
+        </p>
       </footer>
     </div>
   );

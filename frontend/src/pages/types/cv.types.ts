@@ -42,5 +42,6 @@ export interface Template {
   name: string;
   description: string;
   colors: string[];
-  preview: string;
+  preview?: string;
+  gradient?: string;
 }
