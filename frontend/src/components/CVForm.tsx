@@ -215,50 +215,63 @@ export default function CVForm({ onSubmit, loading }: Props) {
                   </label>
                   <input
                     required
-                    type="month"
+                    type={exp.startDate ? "month" : "text"} // Si tiene valor, mantiene el tipo month
+                    placeholder="Ej: 2025-04"
                     className="input-field"
                     value={exp.startDate}
+                    onFocus={(e) => (e.target.type = "month")} // Al hacer clic, se activa el calendario
+                    onBlur={(e) => {
+                      if (!e.target.value) e.target.type = "text"; // Si queda vacío, vuelve al placeholder
+                    }}
                     onChange={(e) => updateExperience(i, "startDate", e.target.value)}
                     style={{ colorScheme: "dark" }}
                   />
                 </div>
 
-                {/* Fecha Hasta — tipo month o "Presente" */}
+                                {/* Fecha Hasta — tipo month o "Presente" */}
                 <div>
-                  <label className="block text-xs font-medium mb-1 flex items-center gap-3" style={{ color: "var(--text-muted)" }}>
-                    Hasta
-                    <span className="flex items-center gap-1.5 ml-2">
-                      <input
-                        type="checkbox"
-                        id={`presente-${i}`}
-                        checked={expPresente[i] ?? false}
-                        onChange={(e) => togglePresente(i, e.target.checked)}
-                        className="rounded"
-                        style={{ accentColor: "var(--accent-1)" }}
-                      />
-                      <label htmlFor={`presente-${i}`} className="text-xs cursor-pointer" style={{ color: "var(--text-muted)" }}>
-                        Actualmente aquí
-                      </label>
-                    </span>
-                  </label>
-                  {expPresente[i] ? (
+                <label className="block text-xs font-medium mb-1 flex items-center gap-3" style={{ color: "var(--text-muted)" }}>
+                  Hasta
+                  <span className="flex items-center gap-1.5 ml-2">
                     <input
-                      className="input-field"
-                      value="Presente"
-                      disabled
-                      style={{ opacity: 0.6 }}
+                      type="checkbox"
+                      id={`presente-${i}`}
+                      checked={expPresente[i] ?? false}
+                      onChange={(e) => togglePresente(i, e.target.checked)}
+                      className="rounded"
+                      style={{ accentColor: "var(--accent-1)" }}
                     />
-                  ) : (
-                    <input
-                      required
-                      type="month"
-                      className="input-field"
-                      value={exp.endDate === "Presente" ? "" : exp.endDate}
-                      onChange={(e) => updateExperience(i, "endDate", e.target.value)}
-                      style={{ colorScheme: "dark" }}
-                    />
-                  )}
-                </div>
+                    <label htmlFor={`presente-${i}`} className="text-xs cursor-pointer" style={{ color: "var(--text-muted)" }}>
+                      Actualmente aquí
+                    </label>
+                  </span>
+                </label>
+                {expPresente[i] ? (
+                  <input
+                    className="input-field"
+                    value="Presente"
+                    disabled
+                    style={{ opacity: 0.6 }}
+                  />
+                ) : (
+                  <input
+                    required
+                    // Si tiene valor, se queda como 'month'. Si está vacío, pasa a 'text' para mostrar el placeholder
+                    type={exp.endDate && exp.endDate !== "Presente" ? "month" : "text"}
+                    placeholder="Ej. 2025-12"
+                    className="input-field"
+                    value={exp.endDate === "Presente" ? "" : exp.endDate}
+                    // Al hacer clic o focus, se convierte en calendario de meses
+                    onFocus={(e) => (e.target.type = "month")}
+                    // Si el usuario sale y no escribió nada, vuelve a mostrar el placeholder
+                    onBlur={(e) => {
+                      if (!e.target.value) e.target.type = "text";
+                    }}
+                    onChange={(e) => updateExperience(i, "endDate", e.target.value)}
+                    style={{ colorScheme: "dark" }}
+                  />
+                )}
+              </div>
 
                 <textarea required rows={3} className="input-field md:col-span-2 resize-none"
                   placeholder="Describe tus responsabilidades y logros..."
@@ -305,7 +318,7 @@ export default function CVForm({ onSubmit, loading }: Props) {
                     type="number"
                     className="input-field"
                     placeholder="Ej: 2018"
-                    min={1950}
+                    min={1960}
                     max={new Date().getFullYear()}
                     value={edu.startDate}
                     onChange={(e) => updateEducation(i, "startDate", e.target.value)}
@@ -322,7 +335,7 @@ export default function CVForm({ onSubmit, loading }: Props) {
                     type="number"
                     className="input-field"
                     placeholder="Ej: 2022"
-                    min={1950}
+                    min={1960}
                     max={new Date().getFullYear() + 6}
                     value={edu.endDate}
                     onChange={(e) => updateEducation(i, "endDate", e.target.value)}
