@@ -8,9 +8,9 @@ interface Props {
 }
 
 const suggestions = [
-  "Hacé los colores más vibrantes",
-  "Usá una tipografía más moderna",
-  "Hacé el diseño más minimalista",
+  "Haz los colores más vibrantes",
+  "Usa una tipografía más moderna",
+  "Haz el diseño más minimalista",
 ];
 
 export default function PromptBar({ onEdit, loading, disabled }: Props) {
