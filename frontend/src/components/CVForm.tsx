@@ -12,6 +12,30 @@ interface Props {
 const emptyExperience: ExperienceItem = { company: "", position: "", startDate: "", endDate: "", description: "" };
 const emptyEducation: EducationItem = { institution: "", degree: "", startDate: "", endDate: "" };
 
+// Convierte "2022-03" → "Mar 2022" (solo para el submit final)
+function formatMonthYear(value: string): string {
+  if (!value || value === "Presente") return value;
+  const parts = value.split("-");
+  if (parts.length !== 2) return value;
+  const [year, month] = parts;
+  const monthNames = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+  const m = parseInt(month, 10);
+  if (isNaN(m) || m < 1 || m > 12) return value;
+  return `${monthNames[m - 1]} ${year}`;
+}
+
+// Prepara el form convirtiendo fechas al formato legible antes de enviar
+function prepareFormData(form: CVFormData): CVFormData {
+  return {
+    ...form,
+    experience: form.experience.map(exp => ({
+      ...exp,
+      startDate: formatMonthYear(exp.startDate),
+      endDate: exp.endDate === "Presente" ? "Presente" : formatMonthYear(exp.endDate),
+    })),
+  };
+}
+
 export default function CVForm({ onSubmit, loading }: Props) {
   const [step, setStep] = useState(1);
   const [form, setForm] = useState<CVFormData>({
@@ -20,6 +44,9 @@ export default function CVForm({ onSubmit, loading }: Props) {
     education: [{ ...emptyEducation }],
     skills: [""], tools: [""], languages: [""],
   });
+
+  // Guarda si "endDate" de experiencia es "Presente"
+  const [expPresente, setExpPresente] = useState<boolean[]>([false]);
 
   function updateField(field: keyof CVFormData, value: any) {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -45,6 +72,16 @@ export default function CVForm({ onSubmit, loading }: Props) {
     const updated = [...form.education];
     updated[index] = { ...updated[index], [key]: value };
     updateField("education", updated);
+  }
+
+  // Maneja el checkbox "Presente" para experiencia
+  function togglePresente(index: number, checked: boolean) {
+    const newPresente = [...expPresente];
+    newPresente[index] = checked;
+    setExpPresente(newPresente);
+    const updated = [...form.experience];
+    updated[index] = { ...updated[index], endDate: checked ? "Presente" : "" };
+    updateField("experience", updated);
   }
 
   function validateStep(s: number) {
@@ -77,7 +114,7 @@ export default function CVForm({ onSubmit, loading }: Props) {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (validateStep(4)) onSubmit(form);
+    if (validateStep(4)) onSubmit(prepareFormData(form));
   }
 
   const sectionCard = "glass-card rounded-2xl p-6 mb-4";
@@ -170,10 +207,59 @@ export default function CVForm({ onSubmit, loading }: Props) {
                   onChange={(e) => updateExperience(i, "company", e.target.value)} />
                 <input required className="input-field" placeholder="Cargo / Puesto" value={exp.position}
                   onChange={(e) => updateExperience(i, "position", e.target.value)} />
-                <input required className="input-field" placeholder="Desde (Ej: Ene 2022)" value={exp.startDate}
-                  onChange={(e) => updateExperience(i, "startDate", e.target.value)} />
-                <input required className="input-field" placeholder="Hasta (Ej: Presente)" value={exp.endDate}
-                  onChange={(e) => updateExperience(i, "endDate", e.target.value)} />
+
+                {/* Fecha Desde — tipo month */}
+                <div>
+                  <label className="block text-xs font-medium mb-1" style={{ color: "var(--text-muted)" }}>
+                    Desde
+                  </label>
+                  <input
+                    required
+                    type="month"
+                    className="input-field"
+                    value={exp.startDate}
+                    onChange={(e) => updateExperience(i, "startDate", e.target.value)}
+                    style={{ colorScheme: "dark" }}
+                  />
+                </div>
+
+                {/* Fecha Hasta — tipo month o "Presente" */}
+                <div>
+                  <label className="block text-xs font-medium mb-1 flex items-center gap-3" style={{ color: "var(--text-muted)" }}>
+                    Hasta
+                    <span className="flex items-center gap-1.5 ml-2">
+                      <input
+                        type="checkbox"
+                        id={`presente-${i}`}
+                        checked={expPresente[i] ?? false}
+                        onChange={(e) => togglePresente(i, e.target.checked)}
+                        className="rounded"
+                        style={{ accentColor: "var(--accent-1)" }}
+                      />
+                      <label htmlFor={`presente-${i}`} className="text-xs cursor-pointer" style={{ color: "var(--text-muted)" }}>
+                        Actualmente aquí
+                      </label>
+                    </span>
+                  </label>
+                  {expPresente[i] ? (
+                    <input
+                      className="input-field"
+                      value="Presente"
+                      disabled
+                      style={{ opacity: 0.6 }}
+                    />
+                  ) : (
+                    <input
+                      required
+                      type="month"
+                      className="input-field"
+                      value={exp.endDate === "Presente" ? "" : exp.endDate}
+                      onChange={(e) => updateExperience(i, "endDate", e.target.value)}
+                      style={{ colorScheme: "dark" }}
+                    />
+                  )}
+                </div>
+
                 <textarea required rows={3} className="input-field md:col-span-2 resize-none"
                   placeholder="Describe tus responsabilidades y logros..."
                   value={exp.description} onChange={(e) => updateExperience(i, "description", e.target.value)} />
@@ -181,7 +267,10 @@ export default function CVForm({ onSubmit, loading }: Props) {
             </div>
           ))}
           <button type="button"
-            onClick={() => updateField("experience", [...form.experience, { ...emptyExperience }])}
+            onClick={() => {
+              updateField("experience", [...form.experience, { ...emptyExperience }]);
+              setExpPresente([...expPresente, false]);
+            }}
             className="flex items-center gap-1.5 text-sm font-semibold transition hover:opacity-80"
             style={{ color: "var(--accent-1)" }}>
             <Plus size={15} /> Agregar experiencia
@@ -205,10 +294,40 @@ export default function CVForm({ onSubmit, loading }: Props) {
                   onChange={(e) => updateEducation(i, "institution", e.target.value)} />
                 <input required className="input-field" placeholder="Título / Carrera" value={edu.degree}
                   onChange={(e) => updateEducation(i, "degree", e.target.value)} />
-                <input required className="input-field" placeholder="Desde (Ej: 2018)" value={edu.startDate}
-                  onChange={(e) => updateEducation(i, "startDate", e.target.value)} />
-                <input required className="input-field" placeholder="Hasta (Ej: 2022)" value={edu.endDate}
-                  onChange={(e) => updateEducation(i, "endDate", e.target.value)} />
+
+                {/* Año Desde — tipo number */}
+                <div>
+                  <label className="block text-xs font-medium mb-1" style={{ color: "var(--text-muted)" }}>
+                    Año de inicio
+                  </label>
+                  <input
+                    required
+                    type="number"
+                    className="input-field"
+                    placeholder="Ej: 2018"
+                    min={1950}
+                    max={new Date().getFullYear()}
+                    value={edu.startDate}
+                    onChange={(e) => updateEducation(i, "startDate", e.target.value)}
+                  />
+                </div>
+
+                {/* Año Hasta — tipo number */}
+                <div>
+                  <label className="block text-xs font-medium mb-1" style={{ color: "var(--text-muted)" }}>
+                    Año de fin
+                  </label>
+                  <input
+                    required
+                    type="number"
+                    className="input-field"
+                    placeholder="Ej: 2022"
+                    min={1950}
+                    max={new Date().getFullYear() + 6}
+                    value={edu.endDate}
+                    onChange={(e) => updateEducation(i, "endDate", e.target.value)}
+                  />
+                </div>
               </div>
             </div>
           ))}
