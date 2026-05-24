@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 
 const sprites = [
-  { src: "/sprites/cris.png", name: "Cristian" },
-  { src: "/sprites/tania.png", name: "Tania" },
-  { src: "/sprites/luis.png", name: "Luis" },
-  { src: "/sprites/eu.png", name: "Berta" },
-  { src: "/sprites/katy.png", name: "Katherine" },
+  { src: "/sprites/CrisRun.gif", name: "Cristian" },
+  { src: "/sprites/TaniaRun.gif", name: "Tania" },
+  { src: "/sprites/LuisRun.gif", name: "Luis" },
+  { src: "/sprites/EuRun.gif", name: "Berta" },
+  { src: "/sprites/Runmin.gif", name: "Katherine" },
 ];
 
 const tasks = [
@@ -29,9 +29,9 @@ const colors = ["#2563EB", "#1E293B", "#7C3AED", "#EC4899", "#10B981"];
 export default function PixelLoader() {
   const [taskIndex, setTaskIndex] = useState(0);
   const [blocks, setBlocks] = useState<Block[]>([]);
-  const [walkFrame, setWalkFrame] = useState(0);
   const [spriteX, setSpriteX] = useState(0);
 
+  // Timer para cambiar de tarea/personaje
   useEffect(() => {
     const taskTimer = setInterval(() => {
       setTaskIndex((prev) => (prev + 1) % tasks.length);
@@ -41,14 +41,15 @@ export default function PixelLoader() {
     return () => clearInterval(taskTimer);
   }, []);
 
+  // Timer para hacer avanzar al sprite horizontalmente
   useEffect(() => {
     const walkTimer = setInterval(() => {
-      setWalkFrame((prev) => (prev + 1) % 2);
       setSpriteX((prev) => (prev >= 200 ? 0 : prev + 4));
     }, 120);
     return () => clearInterval(walkTimer);
   }, []);
 
+  // Timer para generar los bloques de progreso
   useEffect(() => {
     const blockTimer = setInterval(() => {
       setBlocks((prev) => {
@@ -109,15 +110,14 @@ export default function PixelLoader() {
             transition: "left 0.1s linear",
           }}
         >
+          {/* Modificación de la imagen para que use el GIF de Piskel de forma limpia */}
           <img
             src={currentSprite.src}
             alt={currentSprite.name}
             style={{
               width: 48,
               height: 48,
-              imageRendering: "pixelated",
-              transform: walkFrame === 0 ? "translateY(0px)" : "translateY(-3px)",
-              transition: "transform 0.12s",
+              imageRendering: "pixelated", // Clave para mantener los bordes nítidos del Pixel Art
             }}
           />
           <div
