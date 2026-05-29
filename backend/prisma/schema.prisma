@@ -1,3 +1,4 @@
+// backend/prisma/schema.prisma (ACTUALIZADO)
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,19 +9,41 @@ datasource db {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  name      String
-  email     String   @unique
-  createdAt DateTime @default(now())
-  cvs       CV[]
+  id            Int      @id @default(autoincrement())
+  name          String
+  email         String   @unique
+  password      String?  // Para auth local (hash con bcrypt)
+  googleId      String?  @unique // Para Firebase Auth
+  photoURL      String?  // Foto de perfil
+  emailVerified Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  cvs           CV[]
 }
 
 model CV {
-  id        Int      @id @default(autoincrement())
-  userId    Int
-  user      User     @relation(fields: [userId], references: [id])
-  html      String
-  prompt    String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id])
+  title       String   // Titulo del CV ej: "CV para CompuTrabajo"
+  html        String   @db.Text // HTML completo del CV
+  htmlATS     String?  @db.Text // HTML del CV en modo ATS (opcional)
+  style       String   // moderno, clasico, minimalista, creativo
+  mode        String   @default("designed") // "ats" o "designed"
+  formData    Json     // Datos del formulario en JSON
+  prompt      String?  // Ultimo prompt de edicion
+  isPublic    Boolean  @default(false)
+  viewCount   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// NUEVO: Cache de formularios para usuarios sin login
+model FormCache {
+  id          String   @id @default(uuid())
+  sessionId   String   @unique // ID de sesion del navegador
+  formData    Json     // Datos del formulario
+  html        String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
