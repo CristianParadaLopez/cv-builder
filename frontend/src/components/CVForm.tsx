@@ -81,8 +81,7 @@ function prepareFormData(form: CVFormData): CVFormData {
 
 // ─── FORMULARIO ──────────────────────────────────────────────
 
-export default function CVForm({ onSubmit, loading, mode }: Props) {
-  const [step, setStep] = useState(1);
+export default function CVForm({ step,setStep,onSubmit, loading, mode }: Props) {
   const { persistedData, persistFormData } = usePersistCV();
 
   // Inicializar con datos persistidos si existen
@@ -232,17 +231,26 @@ export default function CVForm({ onSubmit, loading, mode }: Props) {
     return stepErrors.length === 0;
   };
 
-  const handleNext = () => {
-    if (validateStep(step)) {
-      setErrors([]);
-      setStep(step + 1);
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    } else {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-    document.querySelector('[data-error]')?.scrollIntoView({ behavior: 'smooth' });
-  }
-  };
+ const handleNext = () => {
+  if (validateStep(step)) {
+    setErrors([]);
+    setStep(step + 1);
 
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  } else {
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+
+    document.querySelector("[data-error]")?.scrollIntoView({
+      behavior: "smooth",
+    });
+  }
+};
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (validateStep(4)) {
@@ -281,25 +289,7 @@ export default function CVForm({ onSubmit, loading, mode }: Props) {
         </div>
       )}
 
-      {/* Steps Indicator */}
-      <div className="flex items-center gap-2 justify-center mb-8">
-        {[1, 2, 3, 4].map((s) => (
-          <div key={s} className="flex items-center gap-2">
-            <div
-              className="w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold transition-all"
-              style={{
-                background: step >= s ? "linear-gradient(135deg, var(--accent-1), var(--accent-2))" : "var(--bg-card2)",
-                border: "1px solid var(--border)",
-                color: step >= s ? "white" : "var(--text-muted)",
-              }}
-            >
-              {s}
-            </div>
-            {s < 4 && <div className="w-8 h-px" style={{ background: step > s ? "var(--accent-1)" : "var(--border)" }} />}
-          </div>
-        ))}
-      </div>
-
+     
       {/* ══════════════════════════════════════════════════════
           STEP 1 — Datos Personales + Foto
       ══════════════════════════════════════════════════════ */}

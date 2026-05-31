@@ -192,23 +192,23 @@ export default function Builder({ dark, setDark }: Props) {
                   className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all
                     ${done ? 'cursor-pointer' : 'cursor-default pointer-events-none'}`}
                   style={{
-                    background: active
-                      ? "linear-gradient(135deg, var(--accent-1), var(--accent-2))"
-                      : done
-                      ? "var(--bg-card2)"
-                      : "transparent",
+  background: active
+    ? "linear-gradient(135deg, var(--accent-1), var(--accent-2))"
+    : done
+    ? "var(--bg-card2)"
+    : "transparent",
 
-                    color: active
-                      ? "white"
-                      : done
-                      ? "var(--text)"
-                      : "var(--text-muted)",
+  color: active
+    ? "white"
+    : done
+    ? "var(--text)"
+    : "var(--text-muted)",
 
-                    border:
-                      active || done
-                        ? "1px solid var(--border)"
-                        : "1px solid transparent",
-                  }}
+  border:
+    active || done
+      ? "1px solid var(--border)"
+      : "1px solid transparent",
+}}
                 >
                   <Icon size={13} />
                   {s.label}
@@ -381,13 +381,13 @@ export default function Builder({ dark, setDark }: Props) {
         {/* STEPS 2-4 */}
         {(step === 2 || step === 3 || step === 4) && (
           <div className="max-w-5xl mx-auto animate-slide-up">
-            <CVForm
-              step={step}
-              setStep={setStep}
-              onSubmit={handleGenerateWithSuccess}
-              loading={loading}
-              mode={mode}
-            />
+      <CVForm
+  step={step}
+  setStep={setStep}
+  onSubmit={handleGenerateWithSuccess}
+  loading={loading}
+  mode={mode}
+/>
 
             <div className="flex justify-start mt-6">
               <button
