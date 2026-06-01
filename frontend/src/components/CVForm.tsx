@@ -253,6 +253,21 @@ export default function CVForm({ step, setStep, onSubmit, loading, mode }: Props
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  } else {
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+
+    document.querySelector("[data-error]")?.scrollIntoView({
+      behavior: "smooth",
+    });
+  }
+};
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (validateStep(step)) {
