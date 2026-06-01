@@ -19,11 +19,12 @@ dotenv.config();
 // ─────────────────────────────────────────────────────────────
 
 const API_KEYS = [
-  { name: process.env.DEV1_NAME || "Cristian", apiKey: process.env.OPENROUTER_API_KEY_1 || "" },
+
   { name: process.env.DEV2_NAME || "Luis",     apiKey: process.env.OPENROUTER_API_KEY_2 || "" },
   { name: process.env.DEV3_NAME || "Eunice",   apiKey: process.env.OPENROUTER_API_KEY_3 || "" },
   { name: process.env.DEV4_NAME || "Tania",    apiKey: process.env.OPENROUTER_API_KEY_4 || "" },
   { name: process.env.DEV5_NAME || "Katherine",apiKey: process.env.OPENROUTER_API_KEY_5 || "" },
+  { name: process.env.DEV1_NAME || "Cristian", apiKey: process.env.OPENROUTER_API_KEY_1 || "" },
 ].filter((k) => k.apiKey !== "");
 
 const MODELS = (
@@ -395,6 +396,12 @@ REQUISITOS TÉCNICOS GENERALES:
 - NO cambiar nombres, fechas ni cargos
 - Mostrar TODAS las secciones que tengan datos: experiencia, educación, habilidades, herramientas, idiomas, certificaciones (si existen), proyectos (si existen), voluntariados (si existen)
 - El resultado debe verse profesional y listo para imprimir o exportar a PDF
+- Al FINAL del bloque <style>, incluir SIEMPRE estas reglas de impresión:
+  @media print {
+    body { margin: 0 !important; }
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    @page { margin: 0; size: A4 portrait; }
+  }
 `;
 
   let html = await callWithFallback([{ role: "user", content: prompt }]);

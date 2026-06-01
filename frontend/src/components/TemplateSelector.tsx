@@ -253,14 +253,8 @@ export default function TemplateSelector({ selected, onSelect, selectedMode, onS
     <div className="space-y-8">
       {/* Header */}
       <div className="text-center">
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-5"
-          style={{ background: "var(--bg-card2)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
-          <Palette size={14} style={{ color: "var(--accent-1)" }} />
-          Paso 1 de 5 · Elegí tu estilo
-        </div>
-        <h2 className="text-4xl lg:text-5xl font-black tracking-tight mb-3">
-          Elegí tu diseño
-        </h2>
+        
+       
         <p className="text-lg max-w-2xl mx-auto" style={{ color: "var(--text-muted)" }}>
           Cada estilo está optimizado para diferentes industrias y plataformas de empleo.
         </p>
