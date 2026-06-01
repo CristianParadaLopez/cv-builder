@@ -1,7 +1,9 @@
-// src/components/CVForm.tsx
-// PASO 4 — IA Asistente en TODOS los campos relevantes
-// Nuevos botones IA en: educación, skills, tools, certificaciones, voluntariados, proyectos
-// Además: contextData dinámico para que la IA sepa el cargo/empresa/institución del usuario
+// src/components/CVForm.tsx NUEVOOO
+// CORRECCIONES:
+// 1. ELIMINADO useState interno para `step` — ahora llega como prop desde Builder
+// 2. setStep es el mismo setter del Builder → un solo estado compartido
+// 3. El indicador visual de pasos interno del formulario usa el `step` prop
+// 4. Sin más desincronización entre header y contenido del form
 
 import { useState, useCallback, useEffect } from "react";
 import {
@@ -22,7 +24,8 @@ import AISuggestField from "./AISuggestField";
 import HelpTooltip from "./HelpTooltip";
 import { usePersistCV } from "../pages/hooks/usePersistCV";
 
-// ─── PROPS ───────────────────────────────────────────────────
+// ─── PROPS ────────────────────────────────────────────────────
+// step y setStep vienen del Builder — estado único y compartido
 
 interface Props {
   step: number;
@@ -32,7 +35,7 @@ interface Props {
   mode: "ats" | "designed";
 }
 
-// ─── VALORES VACÍOS ──────────────────────────────────────────
+// ─── VALORES VACÍOS ───────────────────────────────────────────
 
 const emptyExperience: ExperienceItem = { company: "", position: "", startDate: "", endDate: "", description: "" };
 const emptyEducation: EducationItem = { institution: "", degree: "", startDate: "", endDate: "" };
@@ -40,7 +43,7 @@ const emptyCertification: CertificationItem = { name: "", institution: "", date:
 const emptyVolunteer: VolunteerItem = { organization: "", role: "", startDate: "", endDate: "", description: "" };
 const emptyProject: ProjectItem = { title: "", description: "", tech: [] };
 
-// ─── HELPERS ─────────────────────────────────────────────────
+// ─── HELPERS ──────────────────────────────────────────────────
 
 function formatMonthYear(value: string): string {
   if (!value || value === "Presente") return value;
@@ -53,9 +56,8 @@ function formatMonthYear(value: string): string {
   return `${monthNames[m - 1]} ${year}`;
 }
 
-  function estimatePages(form: CVFormData): number {
+function estimatePages(form: CVFormData): number {
   let contentScore = 0;
-
   contentScore += form.summary.length > 200 ? 2 : 1;
   contentScore += form.experience.length * 3;
   contentScore += form.education.length * 1.5;
@@ -63,12 +65,10 @@ function formatMonthYear(value: string): string {
   contentScore += (form.volunteer?.length || 0) * 2;
   contentScore += (form.projects?.length || 0) * 2;
   contentScore += form.skills.filter(Boolean).length > 6 ? 1 : 0;
-
   return contentScore > 18 ? 2 : 1;
 }
 
 function prepareFormData(form: CVFormData): CVFormData {
-
   return {
     ...form,
     experience: form.experience.map(exp => ({
@@ -79,10 +79,9 @@ function prepareFormData(form: CVFormData): CVFormData {
   };
 }
 
-// ─── FORMULARIO ──────────────────────────────────────────────
+// ─── FORMULARIO ───────────────────────────────────────────────
 
-export default function CVForm({ onSubmit, loading, mode }: Props) {
-  const [step, setStep] = useState(1);
+export default function CVForm({ step, setStep, onSubmit, loading, mode }: Props) {
   const { persistedData, persistFormData } = usePersistCV();
 
   // Inicializar con datos persistidos si existen
@@ -108,12 +107,12 @@ export default function CVForm({ onSubmit, loading, mode }: Props) {
   const [errors, setErrors] = useState<ValidationError[]>([]);
   const [showOptional, setShowOptional] = useState(false);
 
-  // Auto-persistir cada vez que cambia el form
+  // Auto-persistir cuando cambia el form
   useEffect(() => {
     persistFormData(form);
   }, [form]);
 
-  // ─── ACTUALIZACIÓN DE CAMPOS ──────────────────────────────
+  // ─── ACTUALIZACIÓN DE CAMPOS ─────────────────────────────
 
   const updateField = useCallback((field: keyof CVFormData, value: any) => {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -217,15 +216,20 @@ export default function CVForm({ onSubmit, loading, mode }: Props) {
     updateField("projects", (form.projects || []).filter((_, i) => i !== index));
   };
 
-  // ─── VALIDACIÓN ──────────────────────────────────────────
+  // ─── VALIDACIÓN ───────────────────────────────────────────
 
   const validateStep = (s: number): boolean => {
     const validationErrors = validateFormData(form);
     const stepErrors = validationErrors.filter(e => {
-      if (s === 1) return e.section === "personal";
-      if (s === 2) return e.section === "experience";
-      if (s === 3) return e.section === "education";
-      if (s === 4) return ["skills", "tools", "languages"].some(f => e.field.startsWith(f));
+      // step interno del form es step - 1 (el form empieza en step=2 del Builder)
+      // step 2 del Builder = paso 1 del form (Datos personales)
+      // step 3 del Builder = paso 2 del form (Experiencia)
+      // step 4 del Builder = paso 3/4 del form (Educación + Habilidades)
+      const formStep = s - 1; // convertir step del Builder al paso interno
+      if (formStep === 1) return e.section === "personal";
+      if (formStep === 2) return e.section === "experience";
+      if (formStep === 3) return e.section === "education";
+      if (formStep === 4) return ["skills", "tools", "languages"].some(f => e.field.startsWith(f));
       return false;
     });
     setErrors(stepErrors);
@@ -235,17 +239,23 @@ export default function CVForm({ onSubmit, loading, mode }: Props) {
   const handleNext = () => {
     if (validateStep(step)) {
       setErrors([]);
-      setStep(step + 1);
+      // Avanza el step del Builder directamente
+      setStep(prev => Math.min(prev + 1, 4));
       window.scrollTo({ top: 0, behavior: "smooth" });
     } else {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      document.querySelector('[data-error]')?.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  const handleBack = () => {
+    setStep(prev => Math.max(prev - 1, 1));
     window.scrollTo({ top: 0, behavior: "smooth" });
-    document.querySelector('[data-error]')?.scrollIntoView({ behavior: 'smooth' });
-  }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (validateStep(4)) {
+    if (validateStep(step)) {
       const sanitized = sanitizeFormData(form);
       onSubmit(prepareFormData(sanitized));
     }
@@ -253,7 +263,11 @@ export default function CVForm({ onSubmit, loading, mode }: Props) {
 
   const sectionCard = "glass-card rounded-2xl p-6 mb-4";
 
-  // ─── RENDER ──────────────────────────────────────────────
+  // Pasos internos del formulario: step 2 → formStep 1, step 3 → formStep 2, step 4 → formStep 3
+  // Para el indicador visual interno mostramos 1-3 (o 1-4 si necesario)
+  // Pero mantenemos el step del Builder como fuente de verdad
+
+  // ─── RENDER ───────────────────────────────────────────────
 
   return (
     <form onSubmit={handleSubmit} autoComplete="on" className="max-w-5xl mx-auto">
@@ -281,29 +295,11 @@ export default function CVForm({ onSubmit, loading, mode }: Props) {
         </div>
       )}
 
-      {/* Steps Indicator */}
-      <div className="flex items-center gap-2 justify-center mb-8">
-        {[1, 2, 3, 4].map((s) => (
-          <div key={s} className="flex items-center gap-2">
-            <div
-              className="w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold transition-all"
-              style={{
-                background: step >= s ? "linear-gradient(135deg, var(--accent-1), var(--accent-2))" : "var(--bg-card2)",
-                border: "1px solid var(--border)",
-                color: step >= s ? "white" : "var(--text-muted)",
-              }}
-            >
-              {s}
-            </div>
-            {s < 4 && <div className="w-8 h-px" style={{ background: step > s ? "var(--accent-1)" : "var(--border)" }} />}
-          </div>
-        ))}
-      </div>
-
       {/* ══════════════════════════════════════════════════════
-          STEP 1 — Datos Personales + Foto
+          STEP 2 del Builder — Datos Personales + Foto
+          (es step 2 para Builder pero "Paso 1" para el usuario)
       ══════════════════════════════════════════════════════ */}
-      {step === 1 && (
+      {step === 2 && (
         <div className="space-y-6">
           <div className={sectionCard}>
             <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
@@ -336,11 +332,11 @@ export default function CVForm({ onSubmit, loading, mode }: Props) {
                 <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>{form.name.length}/{LIMITS.NAME_MAX}</p>
               </div>
 
-              {/* Título profesional con ChainedSelect */}
+              {/* Título profesional */}
               <div>
                 <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--text-muted)" }}>
                   Título profesional / Cargo
-                  <HelpTooltip title="Título" content="Elegí el cargo que mejor describa tu perfil. Esto ayuda a la IA a generar un CV más preciso." type="tip" />
+                  <HelpTooltip title="Título" content="Elegí el cargo que mejor describa tu perfil." type="tip" />
                 </label>
                 <ChainedSelect
                   type="profession"
@@ -410,7 +406,7 @@ export default function CVForm({ onSubmit, loading, mode }: Props) {
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--text-muted)" }}>
                   Resumen profesional
-                  <HelpTooltip title="Resumen" content="Esta es la primera sección que lee un reclutador. Debe resumir quién sos, qué hacés y qué buscás en 3-4 líneas." type="tip" />
+                  <HelpTooltip title="Resumen" content="Primera sección que lee un reclutador. 3-4 líneas que resumán quién sos y qué buscás." type="tip" />
                 </label>
                 <div className="relative">
                   <FileText size={15} className="absolute left-3.5 top-4" style={{ color: "var(--text-muted)" }} />
@@ -425,10 +421,9 @@ export default function CVForm({ onSubmit, loading, mode }: Props) {
                 </div>
                 <div className="flex items-center justify-between mt-2">
                   <p className="text-xs" style={{ color: "var(--text-muted)" }}>{form.summary.length}/{LIMITS.SUMMARY_MAX}</p>
-                  {/* IA ASISTENTE — Resumen con contexto del título */}
                   <AISuggestField
                     fieldLabel="Resumen profesional"
-                    placeholder="Ej: Soy estudiante de computación, me gusta programar y quiero trabajar en tech..."
+                    placeholder="Ej: Soy estudiante de computación, me gusta programar..."
                     onAccept={(text) => updateField("summary", text)}
                     context="summary"
                     currentValue={form.summary}
@@ -447,8 +442,8 @@ export default function CVForm({ onSubmit, loading, mode }: Props) {
               <HelpTooltip
                 title="Foto"
                 content={mode === "ats"
-                  ? "En modo ATS no se incluye foto. Los sistemas automáticos pueden rechazar CVs con fotos."
-                  : "Una foto profesional aumenta la confianza. Fondo neutro, ropa formal, sonrisa natural."}
+                  ? "En modo ATS no se incluye foto."
+                  : "Una foto profesional aumenta la confianza. Fondo neutro, ropa formal."}
                 type={mode === "ats" ? "warning" : "info"}
               />
             </h3>
@@ -462,9 +457,9 @@ export default function CVForm({ onSubmit, loading, mode }: Props) {
       )}
 
       {/* ══════════════════════════════════════════════════════
-          STEP 2 — Experiencia Laboral
+          STEP 3 del Builder — Experiencia Laboral
       ══════════════════════════════════════════════════════ */}
-      {step === 2 && (
+      {step === 3 && (
         <div className={sectionCard}>
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-xl font-bold flex items-center gap-2">
@@ -472,7 +467,7 @@ export default function CVForm({ onSubmit, loading, mode }: Props) {
               Experiencia Laboral
               <HelpTooltip
                 title="Experiencia"
-                content="¡Todo cuenta! Trabajos formales, horas sociales, prácticas profesionales, proyectos universitarios y trabajo informal. Máximo 5 experiencias."
+                content="¡Todo cuenta! Trabajos formales, horas sociales, prácticas, proyectos universitarios. Máximo 5."
                 type="info"
               />
             </h3>
@@ -512,7 +507,6 @@ export default function CVForm({ onSubmit, loading, mode }: Props) {
                   onChange={(e) => updateExperience(i, "position", e.target.value)}
                 />
 
-                {/* Fechas */}
                 <div>
                   <label className="block text-xs font-medium mb-1" style={{ color: "var(--text-muted)" }}>Desde</label>
                   <input
@@ -528,9 +522,9 @@ export default function CVForm({ onSubmit, loading, mode }: Props) {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium mb-1 flex items-center gap-2" style={{ color: "var(--text-muted)" }}>
+                  <label className="block text-xs font-medium mb-1" style={{ color: "var(--text-muted)" }}>
                     Hasta
-                    <span className="flex items-center gap-1.5 ml-2">
+                    <span className="flex items-center gap-1.5 ml-2 inline-flex">
                       <input
                         type="checkbox"
                         id={`presente-${i}`}
@@ -561,7 +555,6 @@ export default function CVForm({ onSubmit, loading, mode }: Props) {
                   )}
                 </div>
 
-                {/* Descripción con IA — ahora con contextData de empresa y cargo */}
                 <div className="md:col-span-2">
                   <label className="block text-xs font-medium mb-1" style={{ color: "var(--text-muted)" }}>
                     Descripción de responsabilidades
@@ -578,18 +571,13 @@ export default function CVForm({ onSubmit, loading, mode }: Props) {
                     <p className="text-xs" style={{ color: "var(--text-muted)" }}>
                       {exp.description.length}/{LIMITS.DESCRIPTION_MAX}
                     </p>
-                    {/* IA ASISTENTE — Experiencia con empresa+cargo como contexto */}
                     <AISuggestField
                       fieldLabel={`Experiencia #${i + 1}${exp.position ? ` — ${exp.position}` : ""}`}
-                      placeholder="Ej: Ayudé a mi tío en construcción 2 años, aprendí a hacer cemento y trabajar en equipo..."
+                      placeholder="Ej: Ayudé a mi tío en construcción 2 años..."
                       onAccept={(text) => updateExperience(i, "description", text)}
                       context="experience"
                       currentValue={exp.description}
-                      contextData={{
-                        title: form.title,
-                        company: exp.company,
-                        position: exp.position,
-                      }}
+                      contextData={{ title: form.title, company: exp.company, position: exp.position }}
                     />
                   </div>
                 </div>
@@ -604,143 +592,120 @@ export default function CVForm({ onSubmit, loading, mode }: Props) {
               <Plus size={15} /> Agregar experiencia ({LIMITS.EXPERIENCE_MAX - form.experience.length} restantes)
             </button>
           )}
-        </div>
-      )}
 
-      {/* ══════════════════════════════════════════════════════
-          STEP 3 — Educación
-      ══════════════════════════════════════════════════════ */}
-      {step === 3 && (
-        <div className={sectionCard}>
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-xl font-bold flex items-center gap-2">
-              <GraduationCap size={18} style={{ color: "var(--accent-1)" }} />
-              Educación
-              <HelpTooltip
-                title="Educación"
-                content="Incluí desde noveno grado hasta tu formación más alta. Las instituciones acreditadas tienen más peso para reclutadores."
-                type="info"
-              />
-            </h3>
-            <span className="text-xs px-2 py-1 rounded-full" style={{ background: "var(--bg-card2)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
-              {form.education.length}/{LIMITS.EDUCATION_MAX}
-            </span>
-          </div>
-
-          {form.education.map((edu, i) => (
-            <div key={i} className="rounded-xl p-5 mb-4" style={{ background: "var(--bg-card2)", border: "1px solid var(--border)" }}>
-              <div className="flex items-center justify-between mb-4">
-                <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--text-muted)" }}>
-                  Formación #{i + 1}
-                </p>
-                {form.education.length > 1 && (
-                  <button type="button" onClick={() => removeEducation(i)}
-                    className="flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-lg transition hover:bg-red-100"
-                    style={{ color: "#ef4444" }}>
-                    <Trash2 size={12} /> Eliminar
-                  </button>
-                )}
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-3">
-                {/* Institución con ChainedSelect */}
-                <div className="md:col-span-2">
-                  <ChainedSelect
-                    type="institution"
-                    value={edu.institution}
-                    onChange={(val) => updateEducation(i, "institution", val)}
-                    placeholder="Seleccionar institución..."
-                    label="Institución educativa"
-                  />
-                  <input
-                    className="input-field w-full mt-2"
-                    placeholder="O escribí la institución manualmente..."
-                    value={edu.institution}
-                    maxLength={LIMITS.INSTITUTION_MAX}
-                    onChange={(e) => updateEducation(i, "institution", e.target.value)}
-                  />
-                </div>
-
-                <input
-                  required className="input-field"
-                  placeholder="Título / Carrera"
-                  value={edu.degree}
-                  maxLength={LIMITS.DEGREE_MAX}
-                  onChange={(e) => updateEducation(i, "degree", e.target.value)}
+          {/* Educación también va en step 3 */}
+          <div className="mt-8">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold flex items-center gap-2">
+                <GraduationCap size={18} style={{ color: "var(--accent-1)" }} />
+                Educación
+                <HelpTooltip
+                  title="Educación"
+                  content="Incluí desde noveno grado hasta tu formación más alta."
+                  type="info"
                 />
-
-                <div>
-                  <label className="block text-xs font-medium mb-1" style={{ color: "var(--text-muted)" }}>Año de inicio</label>
-                  <input
-                    required type="number" className="input-field"
-                    placeholder="Ej: 2018"
-                    min={1960} max={new Date().getFullYear()}
-                    value={edu.startDate}
-                    onChange={(e) => updateEducation(i, "startDate", e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium mb-1" style={{ color: "var(--text-muted)" }}>Año de fin</label>
-                  <input
-                    required type="number" className="input-field"
-                    placeholder="Ej: 2022"
-                    min={1960} max={new Date().getFullYear() + 6}
-                    value={edu.endDate}
-                    onChange={(e) => updateEducation(i, "endDate", e.target.value)}
-                  />
-                </div>
-
-                
-              </div>
+              </h3>
+              <span className="text-xs px-2 py-1 rounded-full" style={{ background: "var(--bg-card2)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
+                {form.education.length}/{LIMITS.EDUCATION_MAX}
+              </span>
             </div>
-          ))}
 
-          {form.education.length < LIMITS.EDUCATION_MAX && (
-            <button type="button" onClick={addEducation}
-              className="flex items-center gap-1.5 text-sm font-semibold transition hover:opacity-80"
-              style={{ color: "var(--accent-1)" }}>
-              <Plus size={15} /> Agregar educación ({LIMITS.EDUCATION_MAX - form.education.length} restantes)
-            </button>
-          )}
+            {form.education.map((edu, i) => (
+              <div key={i} className="rounded-xl p-5 mb-4" style={{ background: "var(--bg-card2)", border: "1px solid var(--border)" }}>
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--text-muted)" }}>
+                    Formación #{i + 1}
+                  </p>
+                  {form.education.length > 1 && (
+                    <button type="button" onClick={() => removeEducation(i)}
+                      className="flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-lg transition hover:bg-red-100"
+                      style={{ color: "#ef4444" }}>
+                      <Trash2 size={12} /> Eliminar
+                    </button>
+                  )}
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-3">
+                  <div className="md:col-span-2">
+                    <ChainedSelect
+                      type="institution"
+                      value={edu.institution}
+                      onChange={(val) => updateEducation(i, "institution", val)}
+                      placeholder="Seleccionar institución..."
+                      label="Institución educativa"
+                    />
+                    <input
+                      className="input-field w-full mt-2"
+                      placeholder="O escribí la institución manualmente..."
+                      value={edu.institution}
+                      maxLength={LIMITS.INSTITUTION_MAX}
+                      onChange={(e) => updateEducation(i, "institution", e.target.value)}
+                    />
+                  </div>
+
+                  <input
+                    required className="input-field"
+                    placeholder="Título / Carrera"
+                    value={edu.degree}
+                    maxLength={LIMITS.DEGREE_MAX}
+                    onChange={(e) => updateEducation(i, "degree", e.target.value)}
+                  />
+
+                  <div>
+                    <label className="block text-xs font-medium mb-1" style={{ color: "var(--text-muted)" }}>Año de inicio</label>
+                    <input
+                      required type="number" className="input-field"
+                      placeholder="Ej: 2018"
+                      min={1960} max={new Date().getFullYear()}
+                      value={edu.startDate}
+                      onChange={(e) => updateEducation(i, "startDate", e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium mb-1" style={{ color: "var(--text-muted)" }}>Año de fin</label>
+                    <input
+                      required type="number" className="input-field"
+                      placeholder="Ej: 2022"
+                      min={1960} max={new Date().getFullYear() + 6}
+                      value={edu.endDate}
+                      onChange={(e) => updateEducation(i, "endDate", e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            {form.education.length < LIMITS.EDUCATION_MAX && (
+              <button type="button" onClick={addEducation}
+                className="flex items-center gap-1.5 text-sm font-semibold transition hover:opacity-80"
+                style={{ color: "var(--accent-1)" }}>
+                <Plus size={15} /> Agregar educación ({LIMITS.EDUCATION_MAX - form.education.length} restantes)
+              </button>
+            )}
+          </div>
         </div>
       )}
 
       {/* ══════════════════════════════════════════════════════
-          STEP 4 — Habilidades + Secciones Opcionales
+          STEP 4 del Builder — Habilidades + Secciones Opcionales
       ══════════════════════════════════════════════════════ */}
       {step === 4 && (
         <div className="space-y-6">
-          <div
-          className="rounded-xl p-3 mb-4 flex items-center gap-2"
-          style={{
-            background:
-              estimatePages(form) > 1
-                ? "rgba(245,158,11,0.1)"
-                : "rgba(16,185,129,0.1)",
-            border: `1px solid ${
-              estimatePages(form) > 1 ? "#f59e0b" : "#10b981"
-            }`,
-          }}
-        >
-          <span
+          <div className="rounded-xl p-3 mb-4 flex items-center gap-2"
             style={{
-              color: estimatePages(form) > 1 ? "#f59e0b" : "#10b981",
-            }}
-          >
-            {estimatePages(form) > 1
-              ? "⚠️ Estimado: 2 páginas"
-              : "✅ Estimado: 1 página"}
-          </span>
+              background: estimatePages(form) > 1 ? "rgba(245,158,11,0.1)" : "rgba(16,185,129,0.1)",
+              border: `1px solid ${estimatePages(form) > 1 ? "#f59e0b" : "#10b981"}`,
+            }}>
+            <span style={{ color: estimatePages(form) > 1 ? "#f59e0b" : "#10b981" }}>
+              {estimatePages(form) > 1 ? "⚠️ Estimado: 2 páginas" : "✅ Estimado: 1 página"}
+            </span>
+            <span className="text-xs" style={{ color: "var(--text-muted)" }}>
+              {estimatePages(form) > 1
+                ? "— Considerá reducir descripciones para que entre en 1 página"
+                : "— Tu CV entrará bien en 1 página"}
+            </span>
+          </div>
 
-          <span
-            className="text-xs"
-            style={{ color: "var(--text-muted)" }}
-          >
-            {estimatePages(form) > 1
-              ? "— Considerá reducir descripciones para que entre en 1 página"
-              : "— Tu CV entrará bien en 1 página"}
-          </span>
-        </div>
           {/* Skills, Tools, Languages */}
           <div className={sectionCard}>
             <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
@@ -748,32 +713,21 @@ export default function CVForm({ onSubmit, loading, mode }: Props) {
               Habilidades y Herramientas
             </h3>
 
-            {/* ━━━ NUEVO: IA para Skills y Tools globales ━━━ */}
-            <div
-              className="rounded-xl p-3 mb-5"
-              style={{ background: "rgba(124,58,237,0.05)", border: "1px dashed rgba(124,58,237,0.2)" }}
-            >
+            <div className="rounded-xl p-3 mb-5"
+              style={{ background: "rgba(124,58,237,0.05)", border: "1px dashed rgba(124,58,237,0.2)" }}>
               <p className="text-xs font-medium mb-2 flex items-center gap-1.5" style={{ color: "#7C3AED" }}>
                 <Sparkles size={12} />
                 ¿No sabés qué habilidades o herramientas listar?
               </p>
               <div className="flex flex-wrap gap-3">
-                {/* IA para skills */}
                 <div className="flex items-center gap-2">
                   <span className="text-xs" style={{ color: "var(--text-muted)" }}>Para habilidades:</span>
                   <AISuggestField
                     fieldLabel="Habilidades blandas"
-                    placeholder="Ej: Soy bueno trabajando en equipo, me adapto rápido y aprendo solo..."
+                    placeholder="Ej: Soy bueno trabajando en equipo, me adapto rápido..."
                     onAccept={(text) => {
-                      // Parsear las líneas como skills individuales
-                      const newSkills = text
-                        .split("\n")
-                        .map(s => s.replace(/^[-•*]\s*/, "").trim())
-                        .filter(Boolean)
-                        .slice(0, LIMITS.SKILLS_MAX);
-                      if (newSkills.length > 0) {
-                        updateField("skills", newSkills);
-                      }
+                      const newSkills = text.split("\n").map(s => s.replace(/^[-•*]\s*/, "").trim()).filter(Boolean).slice(0, LIMITS.SKILLS_MAX);
+                      if (newSkills.length > 0) updateField("skills", newSkills);
                     }}
                     context="skills"
                     currentValue={form.skills.filter(Boolean).join(", ")}
@@ -781,22 +735,14 @@ export default function CVForm({ onSubmit, loading, mode }: Props) {
                     compact
                   />
                 </div>
-                {/* IA para tools */}
                 <div className="flex items-center gap-2">
                   <span className="text-xs" style={{ color: "var(--text-muted)" }}>Para herramientas:</span>
                   <AISuggestField
                     fieldLabel="Herramientas técnicas"
-                    placeholder="Ej: Uso el Excel, Photoshop básico, sé algo de Python y manejo Word bien..."
+                    placeholder="Ej: Uso el Excel, Photoshop básico, sé algo de Python..."
                     onAccept={(text) => {
-                      // Parsear herramientas
-                      const newTools = text
-                        .split("\n")
-                        .map(t => t.replace(/^[-•*]\s*/, "").trim())
-                        .filter(Boolean)
-                        .slice(0, LIMITS.TOOLS_MAX);
-                      if (newTools.length > 0) {
-                        updateField("tools", newTools);
-                      }
+                      const newTools = text.split("\n").map(t => t.replace(/^[-•*]\s*/, "").trim()).filter(Boolean).slice(0, LIMITS.TOOLS_MAX);
+                      if (newTools.length > 0) updateField("tools", newTools);
                     }}
                     context="tools"
                     currentValue={form.tools.filter(Boolean).join(", ")}
@@ -809,9 +755,9 @@ export default function CVForm({ onSubmit, loading, mode }: Props) {
 
             <div className="grid md:grid-cols-3 gap-6">
               {[
-                { label: "Habilidades", field: "skills" as const, icon: Award, placeholder: "Ej: Liderazgo", max: LIMITS.SKILLS_MAX, aiContext: "skills" as const },
-                { label: "Herramientas", field: "tools" as const, icon: Wrench, placeholder: "Ej: React, Figma", max: LIMITS.TOOLS_MAX, aiContext: "tools" as const },
-                { label: "Idiomas", field: "languages" as const, icon: Languages, placeholder: "Ej: Inglés B2", max: LIMITS.LANGUAGES_MAX, aiContext: null },
+                { label: "Habilidades", field: "skills" as const, icon: Award, placeholder: "Ej: Liderazgo", max: LIMITS.SKILLS_MAX },
+                { label: "Herramientas", field: "tools" as const, icon: Wrench, placeholder: "Ej: React, Figma", max: LIMITS.TOOLS_MAX },
+                { label: "Idiomas", field: "languages" as const, icon: Languages, placeholder: "Ej: Inglés B2", max: LIMITS.LANGUAGES_MAX },
               ].map(({ label, field, icon: Icon, placeholder, max }) => (
                 <div key={field}>
                   <div className="flex items-center justify-between mb-3">
@@ -834,12 +780,9 @@ export default function CVForm({ onSubmit, loading, mode }: Props) {
                         onChange={(e) => updateListItem(field, i, e.target.value)}
                       />
                       {form[field].length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => removeListItem(field, i)}
+                        <button type="button" onClick={() => removeListItem(field, i)}
                           className="w-8 h-8 rounded-lg flex items-center justify-center transition hover:bg-red-100"
-                          style={{ color: "#ef4444" }}
-                        >
+                          style={{ color: "#ef4444" }}>
                           <Minus size={14} />
                         </button>
                       )}
@@ -847,12 +790,9 @@ export default function CVForm({ onSubmit, loading, mode }: Props) {
                   ))}
 
                   {form[field].length < max && (
-                    <button
-                      type="button"
-                      onClick={() => addListItem(field, max)}
+                    <button type="button" onClick={() => addListItem(field, max)}
                       className="flex items-center gap-1 text-xs font-semibold mt-1 transition hover:opacity-80"
-                      style={{ color: "var(--accent-1)" }}
-                    >
+                      style={{ color: "var(--accent-1)" }}>
                       <Plus size={13} /> Agregar ({max - form[field].length} restantes)
                     </button>
                   )}
@@ -861,17 +801,15 @@ export default function CVForm({ onSubmit, loading, mode }: Props) {
             </div>
           </div>
 
-          {/* ━━━ Secciones Opcionales ━━━ */}
+          {/* Secciones Opcionales */}
           <div className={sectionCard}>
-            <button
-              type="button"
-              onClick={() => setShowOptional(!showOptional)}
-              className="w-full flex items-center justify-between"
-            >
+            <button type="button" onClick={() => setShowOptional(!showOptional)}
+              className="w-full flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Sparkles size={18} style={{ color: "var(--accent-2)" }} />
                 <h3 className="text-xl font-bold">Secciones opcionales</h3>
-                <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: "var(--bg-card2)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
+                <span className="text-xs px-2 py-0.5 rounded-full"
+                  style={{ background: "var(--bg-card2)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
                   Recomendado
                 </span>
               </div>
@@ -888,17 +826,13 @@ export default function CVForm({ onSubmit, loading, mode }: Props) {
             {showOptional && (
               <div className="mt-6 space-y-8 animate-slide-up">
 
-                {/* ━━━ CERTIFICACIONES ━━━ */}
+                {/* CERTIFICACIONES */}
                 <div>
                   <div className="flex items-center justify-between mb-3">
                     <h4 className="font-semibold flex items-center gap-2">
                       <CertificateIcon size={16} style={{ color: "var(--accent-1)" }} />
                       Certificaciones y Cursos
-                      <HelpTooltip
-                        title="Certificaciones"
-                        content="Incluí cursos de Coursera, Udemy, freeCodeCamp o certificaciones profesionales. Mencioná la institución emisora y fecha."
-                        type="tip"
-                      />
+                      <HelpTooltip title="Certificaciones" content="Incluí cursos de Coursera, Udemy, freeCodeCamp o certificaciones profesionales." type="tip" />
                     </h4>
                     <span className="text-xs" style={{ color: "var(--text-muted)" }}>
                       {(form.certifications?.length || 0)}/{LIMITS.CERTIFICATIONS_MAX}
@@ -910,57 +844,20 @@ export default function CVForm({ onSubmit, loading, mode }: Props) {
                       <div className="flex items-center justify-between mb-3">
                         <span className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>Certificación #{i + 1}</span>
                         <button type="button" onClick={() => removeCertification(i)}
-                          className="text-xs flex items-center gap-1 transition hover:opacity-70"
-                          style={{ color: "#ef4444" }}>
+                          className="text-xs flex items-center gap-1 transition hover:opacity-70" style={{ color: "#ef4444" }}>
                           <Trash2 size={12} /> Eliminar
                         </button>
                       </div>
                       <div className="grid md:grid-cols-2 gap-2">
-                        <input
-                          className="input-field"
-                          placeholder="Nombre de la certificación"
-                          value={cert.name}
-                          maxLength={100}
-                          onChange={(e) => updateCertification(i, "name", e.target.value)}
-                        />
-                        <input
-                          className="input-field"
-                          placeholder="Institución emisora (ej: Coursera)"
-                          value={cert.institution}
-                          maxLength={100}
-                          onChange={(e) => updateCertification(i, "institution", e.target.value)}
-                        />
-                        <input
-                          type="month" className="input-field"
-                          placeholder="Fecha"
-                          value={cert.date}
-                          onChange={(e) => updateCertification(i, "date", e.target.value)}
-                        />
-                        <input
-                          className="input-field"
-                          placeholder="URL del certificado (opcional)"
-                          value={cert.url || ""}
-                          maxLength={200}
-                          onChange={(e) => updateCertification(i, "url", e.target.value)}
-                        />
+                        <input className="input-field" placeholder="Nombre de la certificación"
+                          value={cert.name} maxLength={100} onChange={(e) => updateCertification(i, "name", e.target.value)} />
+                        <input className="input-field" placeholder="Institución emisora (ej: Coursera)"
+                          value={cert.institution} maxLength={100} onChange={(e) => updateCertification(i, "institution", e.target.value)} />
+                        <input type="month" className="input-field" placeholder="Fecha"
+                          value={cert.date} onChange={(e) => updateCertification(i, "date", e.target.value)} />
+                        <input className="input-field" placeholder="URL del certificado (opcional)"
+                          value={cert.url || ""} maxLength={200} onChange={(e) => updateCertification(i, "url", e.target.value)} />
                       </div>
-
-                      {/* ━━━ NUEVO: IA en Certificación ━━━ */}
-                      {cert.name && (
-                        <div className="mt-3 flex items-center gap-2">
-                          <span className="text-xs" style={{ color: "var(--text-muted)" }}>
-                            Generar descripción de esta cert:
-                          </span>
-                          <AISuggestField
-                            fieldLabel={`Certificación — ${cert.name}`}
-                            placeholder="Ej: Aprendí a usar Excel avanzado, tablas dinámicas, macros básicas y análisis de datos..."
-                            onAccept={(text) => updateCertification(i, "url", text)} // guardamos como contexto
-                            context="certification"
-                            contextData={{ title: form.title }}
-                            compact
-                          />
-                        </div>
-                      )}
                     </div>
                   ))}
 
@@ -973,17 +870,13 @@ export default function CVForm({ onSubmit, loading, mode }: Props) {
                   )}
                 </div>
 
-                {/* ━━━ VOLUNTARIADOS ━━━ */}
+                {/* VOLUNTARIADOS */}
                 <div>
                   <div className="flex items-center justify-between mb-3">
                     <h4 className="font-semibold flex items-center gap-2">
                       <Heart size={16} style={{ color: "var(--accent-1)" }} />
                       Voluntariados / Horas Sociales
-                      <HelpTooltip
-                        title="Voluntariados"
-                        content="Las horas sociales y prácticas profesionales cuentan como experiencia válida. Describí tus responsabilidades con verbos de acción."
-                        type="tip"
-                      />
+                      <HelpTooltip title="Voluntariados" content="Las horas sociales y prácticas cuentan como experiencia válida." type="tip" />
                     </h4>
                     <span className="text-xs" style={{ color: "var(--text-muted)" }}>
                       {(form.volunteer?.length || 0)}/{LIMITS.VOLUNTEER_MAX}
@@ -995,61 +888,32 @@ export default function CVForm({ onSubmit, loading, mode }: Props) {
                       <div className="flex items-center justify-between mb-3">
                         <span className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>Voluntariado #{i + 1}</span>
                         <button type="button" onClick={() => removeVolunteer(i)}
-                          className="text-xs flex items-center gap-1 transition hover:opacity-70"
-                          style={{ color: "#ef4444" }}>
+                          className="text-xs flex items-center gap-1 transition hover:opacity-70" style={{ color: "#ef4444" }}>
                           <Trash2 size={12} /> Eliminar
                         </button>
                       </div>
                       <div className="grid md:grid-cols-2 gap-2">
-                        <input
-                          className="input-field"
-                          placeholder="Organización"
-                          value={vol.organization}
-                          maxLength={100}
-                          onChange={(e) => updateVolunteer(i, "organization", e.target.value)}
-                        />
-                        <input
-                          className="input-field"
-                          placeholder="Rol / Cargo"
-                          value={vol.role}
-                          maxLength={100}
-                          onChange={(e) => updateVolunteer(i, "role", e.target.value)}
-                        />
-                        <input
-                          type="month" className="input-field"
-                          placeholder="Desde"
-                          value={vol.startDate}
-                          onChange={(e) => updateVolunteer(i, "startDate", e.target.value)}
-                        />
-                        <input
-                          type="month" className="input-field"
-                          placeholder="Hasta"
-                          value={vol.endDate}
-                          onChange={(e) => updateVolunteer(i, "endDate", e.target.value)}
-                        />
-                        <textarea
-                          className="input-field resize-none md:col-span-2" rows={2}
+                        <input className="input-field" placeholder="Organización"
+                          value={vol.organization} maxLength={100} onChange={(e) => updateVolunteer(i, "organization", e.target.value)} />
+                        <input className="input-field" placeholder="Rol / Cargo"
+                          value={vol.role} maxLength={100} onChange={(e) => updateVolunteer(i, "role", e.target.value)} />
+                        <input type="month" className="input-field" placeholder="Desde"
+                          value={vol.startDate} onChange={(e) => updateVolunteer(i, "startDate", e.target.value)} />
+                        <input type="month" className="input-field" placeholder="Hasta"
+                          value={vol.endDate} onChange={(e) => updateVolunteer(i, "endDate", e.target.value)} />
+                        <textarea className="input-field resize-none md:col-span-2" rows={2}
                           placeholder="Descripción de actividades..."
-                          value={vol.description}
-                          maxLength={400}
-                          onChange={(e) => updateVolunteer(i, "description", e.target.value)}
-                        />
-                        {/* Contador + IA */}
+                          value={vol.description} maxLength={400}
+                          onChange={(e) => updateVolunteer(i, "description", e.target.value)} />
                         <div className="md:col-span-2 flex items-center justify-between">
-                          <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                            {vol.description.length}/400
-                          </p>
-                          {/* ━━━ NUEVO: IA en Voluntariado ━━━ */}
+                          <p className="text-xs" style={{ color: "var(--text-muted)" }}>{vol.description.length}/400</p>
                           <AISuggestField
                             fieldLabel={`Voluntariado — ${vol.organization || "Organización"}`}
-                            placeholder="Ej: Di clases a niños de zonas rurales en mis horas sociales de la universidad durante 6 meses..."
+                            placeholder="Ej: Di clases a niños de zonas rurales en mis horas sociales..."
                             onAccept={(text) => updateVolunteer(i, "description", text)}
                             context="volunteer"
                             currentValue={vol.description}
-                            contextData={{
-                              title: form.title,
-                              organization: vol.organization,
-                            }}
+                            contextData={{ title: form.title, organization: vol.organization }}
                           />
                         </div>
                       </div>
@@ -1065,17 +929,13 @@ export default function CVForm({ onSubmit, loading, mode }: Props) {
                   )}
                 </div>
 
-                {/* ━━━ PROYECTOS ━━━ */}
+                {/* PROYECTOS */}
                 <div>
                   <div className="flex items-center justify-between mb-3">
                     <h4 className="font-semibold flex items-center gap-2">
                       <FolderOpen size={16} style={{ color: "var(--accent-1)" }} />
                       Proyectos Académicos / Personales
-                      <HelpTooltip
-                        title="Proyectos"
-                        content="Incluí proyectos de universidad, personales o freelance. Mencioná las tecnologías usadas y resultados concretos."
-                        type="tip"
-                      />
+                      <HelpTooltip title="Proyectos" content="Incluí proyectos de universidad, personales o freelance." type="tip" />
                     </h4>
                     <span className="text-xs" style={{ color: "var(--text-muted)" }}>
                       {(form.projects?.length || 0)}/{LIMITS.PROJECTS_MAX}
@@ -1087,42 +947,24 @@ export default function CVForm({ onSubmit, loading, mode }: Props) {
                       <div className="flex items-center justify-between mb-3">
                         <span className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>Proyecto #{i + 1}</span>
                         <button type="button" onClick={() => removeProject(i)}
-                          className="text-xs flex items-center gap-1 transition hover:opacity-70"
-                          style={{ color: "#ef4444" }}>
+                          className="text-xs flex items-center gap-1 transition hover:opacity-70" style={{ color: "#ef4444" }}>
                           <Trash2 size={12} /> Eliminar
                         </button>
                       </div>
                       <div className="grid md:grid-cols-2 gap-2">
-                        <input
-                          className="input-field"
-                          placeholder="Título del proyecto"
-                          value={proj.title}
-                          maxLength={100}
-                          onChange={(e) => updateProject(i, "title", e.target.value)}
-                        />
-                        <input
-                          className="input-field"
-                          placeholder="URL (opcional, ej: github.com/...)"
-                          value={proj.url || ""}
-                          maxLength={200}
-                          onChange={(e) => updateProject(i, "url", e.target.value)}
-                        />
-                        <textarea
-                          className="input-field resize-none md:col-span-2" rows={2}
+                        <input className="input-field" placeholder="Título del proyecto"
+                          value={proj.title} maxLength={100} onChange={(e) => updateProject(i, "title", e.target.value)} />
+                        <input className="input-field" placeholder="URL (opcional, ej: github.com/...)"
+                          value={proj.url || ""} maxLength={200} onChange={(e) => updateProject(i, "url", e.target.value)} />
+                        <textarea className="input-field resize-none md:col-span-2" rows={2}
                           placeholder="Descripción del proyecto..."
-                          value={proj.description}
-                          maxLength={500}
-                          onChange={(e) => updateProject(i, "description", e.target.value)}
-                        />
-                        {/* Contador + IA */}
+                          value={proj.description} maxLength={500}
+                          onChange={(e) => updateProject(i, "description", e.target.value)} />
                         <div className="md:col-span-2 flex items-center justify-between">
-                          <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                            {proj.description.length}/500
-                          </p>
-                          {/* ━━━ NUEVO: IA en Proyecto ━━━ */}
+                          <p className="text-xs" style={{ color: "var(--text-muted)" }}>{proj.description.length}/500</p>
                           <AISuggestField
                             fieldLabel={`Proyecto — ${proj.title || "Sin título"}`}
-                            placeholder="Ej: Hice una app para llevar registro de gastos con React y guardaba los datos en Firebase..."
+                            placeholder="Ej: Hice una app para llevar registro de gastos con React..."
                             onAccept={(text) => updateProject(i, "description", text)}
                             context="project"
                             currentValue={proj.description}
@@ -1133,13 +975,10 @@ export default function CVForm({ onSubmit, loading, mode }: Props) {
                           <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>
                             Tecnologías (separadas por coma)
                           </label>
-                          <input
-                            className="input-field w-full"
-                            placeholder="Ej: React, Node.js, MongoDB, Firebase"
-                            value={proj.tech.join(", ")}
-                            maxLength={200}
-                            onChange={(e) => updateProject(i, "tech", e.target.value.split(",").map(t => t.trim()).filter(Boolean))}
-                          />
+                          <input className="input-field w-full"
+                            placeholder="Ej: React, Node.js, MongoDB"
+                            value={proj.tech.join(", ")} maxLength={200}
+                            onChange={(e) => updateProject(i, "tech", e.target.value.split(",").map(t => t.trim()).filter(Boolean))} />
                         </div>
                       </div>
                     </div>
@@ -1164,12 +1003,9 @@ export default function CVForm({ onSubmit, loading, mode }: Props) {
           NAVEGACIÓN
       ══════════════════════════════════════════════════════ */}
       <div className="flex justify-between mt-6">
-        {step > 1 && (
-          <button
-            type="button"
-            onClick={() => { setStep(step - 1); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-            className="btn-ghost flex items-center gap-2"
-          >
+        {step > 2 && (
+          <button type="button" onClick={handleBack}
+            className="btn-ghost flex items-center gap-2">
             ← Volver
           </button>
         )}
@@ -1180,13 +1016,10 @@ export default function CVForm({ onSubmit, loading, mode }: Props) {
             Siguiente <ChevronRight size={16} />
           </button>
         ) : (
-          
           <button
             type="submit"
             disabled={loading}
-            onClick={(e) => {
-              if (loading) e.preventDefault();
-            }}
+            onClick={(e) => { if (loading) e.preventDefault(); }}
             className="btn-primary flex items-center gap-2 ml-auto"
           >
             {loading && <Loader2 size={16} className="animate-spin" />}

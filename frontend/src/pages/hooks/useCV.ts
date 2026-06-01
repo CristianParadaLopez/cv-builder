@@ -59,7 +59,3 @@ export function useCV(mode: CVMode = "designed") {
     handleEdit,
   };
 }
-
-function persistHTML(result: string) {
-  throw new Error("Function not implemented.");
-}
