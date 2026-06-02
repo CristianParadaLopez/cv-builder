@@ -31,7 +31,11 @@ export default function Preview() {
       <header className="bg-white border-b border-gray-200 px-8 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">S</span>
+            <img
+              src="/images/logo.png"
+              alt="Skillara AI"
+              className="w-9 h-9 rounded-xl object-cover shadow-lg"
+            />
           </div>
           <h1 className="text-xl font-bold text-gray-800">Skillara AI</h1>
         </div>

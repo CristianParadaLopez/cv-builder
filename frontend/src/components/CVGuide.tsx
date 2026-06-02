@@ -351,10 +351,11 @@ export default function CVGuide({ onStartBuilder, onSkip }: Props) {
       }}>
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl flex items-center justify-center text-white font-black text-xs"
-              style={{ background: "linear-gradient(135deg, var(--accent-1), var(--accent-2))" }}>
-              S
-            </div>
+            <img
+              src="/images/logo.png"
+              alt="Skillara AI"
+              className="w-9 h-9 rounded-xl object-cover shadow-lg"
+            />
             <div>
               <p className="text-sm font-bold">Skillara AI</p>
               <p className="text-xs" style={{ color: "var(--text-muted)" }}>Guía Profesional de CVs</p>

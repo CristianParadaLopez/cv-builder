@@ -33,6 +33,7 @@ interface Props {
   onSubmit: (data: CVFormData) => void;
   loading: boolean;
   mode: "ats" | "designed";
+  navigate?: (path: string) => void;
 }
 
 // ─── VALORES VACÍOS ───────────────────────────────────────────
@@ -713,45 +714,6 @@ export default function CVForm({ step, setStep, onSubmit, loading, mode }: Props
               Habilidades y Herramientas
             </h3>
 
-            <div className="rounded-xl p-3 mb-5"
-              style={{ background: "rgba(124,58,237,0.05)", border: "1px dashed rgba(124,58,237,0.2)" }}>
-              <p className="text-xs font-medium mb-2 flex items-center gap-1.5" style={{ color: "#7C3AED" }}>
-                <Sparkles size={12} />
-                ¿No sabés qué habilidades o herramientas listar?
-              </p>
-              <div className="flex flex-wrap gap-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs" style={{ color: "var(--text-muted)" }}>Para habilidades:</span>
-                  <AISuggestField
-                    fieldLabel="Habilidades blandas"
-                    placeholder="Ej: Soy bueno trabajando en equipo, me adapto rápido..."
-                    onAccept={(text) => {
-                      const newSkills = text.split("\n").map(s => s.replace(/^[-•*]\s*/, "").trim()).filter(Boolean).slice(0, LIMITS.SKILLS_MAX);
-                      if (newSkills.length > 0) updateField("skills", newSkills);
-                    }}
-                    context="skills"
-                    currentValue={form.skills.filter(Boolean).join(", ")}
-                    contextData={{ title: form.title }}
-                    compact
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs" style={{ color: "var(--text-muted)" }}>Para herramientas:</span>
-                  <AISuggestField
-                    fieldLabel="Herramientas técnicas"
-                    placeholder="Ej: Uso el Excel, Photoshop básico, sé algo de Python..."
-                    onAccept={(text) => {
-                      const newTools = text.split("\n").map(t => t.replace(/^[-•*]\s*/, "").trim()).filter(Boolean).slice(0, LIMITS.TOOLS_MAX);
-                      if (newTools.length > 0) updateField("tools", newTools);
-                    }}
-                    context="tools"
-                    currentValue={form.tools.filter(Boolean).join(", ")}
-                    contextData={{ title: form.title }}
-                    compact
-                  />
-                </div>
-              </div>
-            </div>
 
             <div className="grid md:grid-cols-3 gap-6">
               {[
@@ -1002,30 +964,52 @@ export default function CVForm({ step, setStep, onSubmit, loading, mode }: Props
       {/* ══════════════════════════════════════════════════════
           NAVEGACIÓN
       ══════════════════════════════════════════════════════ */}
-      <div className="flex justify-between mt-6">
-        {step > 2 && (
-          <button type="button" onClick={handleBack}
-            className="btn-ghost flex items-center gap-2">
-            ← Volver
-          </button>
-        )}
+      <div className="flex justify-between items-center mt-6">
+        <div className="flex items-center gap-2">
+          {step > 2 && (
+            <button type="button" onClick={handleBack}
+              className="btn-ghost flex items-center gap-2">
+              ← Volver
+            </button>
+          )}
+        </div>
 
-        {step < 4 ? (
-          <button type="button" onClick={handleNext}
-            className="btn-primary flex items-center gap-2 ml-auto">
-            Siguiente <ChevronRight size={16} />
-          </button>
-        ) : (
+        <div className="flex items-center gap-2">
+          {/* Botón para ir al Dashboard */}
           <button
-            type="submit"
-            disabled={loading}
-            onClick={(e) => { if (loading) e.preventDefault(); }}
-            className="btn-primary flex items-center gap-2 ml-auto"
+            type="button"
+            onClick={() => {
+              // Necesitamos navigate, así que hay que pasarlo como prop o usar window
+              window.location.href = "/dashboard";
+            }}
+            className="flex items-center gap-2 text-sm px-4 py-2.5 rounded-xl font-semibold transition hover:scale-105"
+            style={{
+              background: "var(--bg-card2)",
+              border: "1px solid var(--border)",
+              color: "var(--text-muted)",
+            }}
           >
-            {loading && <Loader2 size={16} className="animate-spin" />}
-            {loading ? "Generando CV..." : "Generar CV con IA"}
+            <FileText size={15} />
+            Ver CVs guardados
           </button>
-        )}
+
+          {step < 4 ? (
+            <button type="button" onClick={handleNext}
+              className="btn-primary flex items-center gap-2">
+              Siguiente <ChevronRight size={16} />
+            </button>
+          ) : (
+            <button
+              type="submit"
+              disabled={loading}
+              onClick={(e) => { if (loading) e.preventDefault(); }}
+              className="btn-primary flex items-center gap-2"
+            >
+              {loading && <Loader2 size={16} className="animate-spin" />}
+              {loading ? "Generando CV..." : "Generar CV con IA"}
+            </button>
+          )}
+        </div>
       </div>
     </form>
   );

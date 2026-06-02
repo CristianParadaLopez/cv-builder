@@ -4,6 +4,8 @@ import {
   Sun, Moon, ArrowRight, CheckCircle2, Zap, Star,
   Code2, Send, Link, Sparkles, FileText
 } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
+import Footer from "../components/Footer";
 
 const features = [
   {
@@ -45,6 +47,7 @@ interface Props {
 }
 
 export default function Home({ dark, setDark }: Props) {
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
 
   return (
@@ -62,10 +65,11 @@ export default function Home({ dark, setDark }: Props) {
       <nav className="relative z-20 flex items-center justify-between px-6 lg:px-12 py-5 border-b"
         style={{ borderColor: "var(--border)", background: "var(--bg-card)", backdropFilter: "blur(20px)" }}>
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center font-black text-white text-sm shadow-lg"
-            style={{ background: "linear-gradient(135deg, var(--accent-1), var(--accent-2))" }}>
-            S
-          </div>
+          <img
+              src="/images/logo.png"
+              alt="Skillara AI"
+              className="w-9 h-9 rounded-xl object-cover shadow-lg"
+            />
           <span className="text-lg font-bold tracking-tight" style={{ fontFamily: "'Syne', sans-serif" }}>
             Skillara <span className="opacity-50">AI</span>
           </span>
@@ -80,6 +84,34 @@ export default function Home({ dark, setDark }: Props) {
           >
             {dark ? <Sun size={17} /> : <Moon size={17} />}
           </button>
+          {user ? (
+            <>
+              <button
+                onClick={() => navigate("/dashboard")}
+                className="flex items-center gap-2 px-4 py-2.5 text-sm rounded-xl font-semibold transition-all hover:scale-105"
+                style={{ background: "var(--bg-card2)", border: "1px solid var(--border)", color: "var(--text)" }}
+              >
+                <FileText size={15} />
+                Mis CVs
+              </button>
+              <button
+                onClick={logout}
+                className="flex items-center gap-2 px-4 py-2.5 text-sm rounded-xl font-semibold transition-all hover:scale-105"
+                style={{ background: "var(--bg-card2)", border: "1px solid var(--border)", color: "var(--text-muted)" }}
+              >
+                Salir
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => navigate("/login")}
+              className="flex items-center gap-2 px-4 py-2.5 text-sm rounded-xl font-semibold transition-all hover:scale-105"
+              style={{ background: "var(--bg-card2)", border: "1px solid var(--border)", color: "var(--text)" }}
+            >
+              Iniciar sesión
+            </button>
+          )}
+
 
           <button
             onClick={() => navigate("/builder")}
@@ -273,27 +305,7 @@ export default function Home({ dark, setDark }: Props) {
       </section>
 
       {/* FOOTER */}
-      <footer className="relative z-10 px-8 py-8 border-t flex flex-col lg:flex-row items-center justify-between gap-4"
-        style={{ borderColor: "var(--border)" }}>
-        <div className="flex items-center gap-3">
-          <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-black"
-            style={{ background: "linear-gradient(135deg, var(--accent-1), var(--accent-2))" }}>S</div>
-          <span className="text-sm font-medium" style={{ color: "var(--text-muted)" }}>Skillara AI © 2026</span>
-        </div>
-
-        <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-          Plataforma universitaria impulsada con Inteligencia Artificial
-        </p>
-
-        <div className="flex items-center gap-3">
-          {[Code2, Send, Link].map((Icon, i) => (
-            <button key={i} className="w-8 h-8 rounded-lg flex items-center justify-center transition hover:scale-110"
-              style={{ background: "var(--bg-card2)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
-              <Icon size={15} />
-            </button>
-          ))}
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

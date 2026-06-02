@@ -343,7 +343,7 @@ function ModalComponent({
   onClose, onGenerate, onAccept, onRetry,
 }: ModalProps) {
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4">
       {/* Backdrop — opaco para que el modo oscuro no lo traspase */}
       <div
           className="absolute inset-0"
@@ -363,15 +363,15 @@ function ModalComponent({
         - Footer: shrink-0 (siempre visible abajo)
       */}
       <div
-        className="relative w-full max-w-lg rounded-2xl shadow-2xl animate-slide-up"
+        className="relative w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl shadow-2xl animate-slide-up"
         style={{
           background: "var(--bg-card)",
           border: "1px solid var(--border)",
-          maxHeight: "min(85vh, 680px)",
+          maxHeight: "92vh",
+          height: "auto",
           display: "flex",
           flexDirection: "column",
           overflow: "hidden",
-          // SIN overflowY aquí — solo el body scrollea
         }}
       >
         {/* ── HEADER (shrink-0, nunca desaparece) ── */}

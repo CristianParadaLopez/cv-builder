@@ -1,9 +1,11 @@
-// src/pages/Builder.tsx NUEVO
+// src/pages/Builder.tsx
 import { useState, useRef, useCallback, useEffect } from "react";
 import {
   Sun, Moon, Download, ChevronLeft, ChevronRight,
   Palette, User, Briefcase, Wrench, Rocket,
   FileDown, Loader2, Check, Menu, X, FileCheck,
+  Home, Save,
+  FileText,
 } from "lucide-react";
 
 import html2canvas from "html2canvas";
@@ -19,6 +21,9 @@ import Footer from "../components/Footer";
 import { useCV } from "./hooks/useCV";
 import { usePersistCV } from "./hooks/usePersistCV";
 import type { CVMode } from "./types/cv.types";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { saveCV } from "./services/cvStorage";
 
 interface Props {
   dark: boolean;
@@ -38,6 +43,9 @@ export default function Builder({ dark, setDark }: Props) {
   const { html, loading, error, style, setStyle, handleGenerate, handleEdit } = useCV(mode);
   const { hasPersistedData } = usePersistCV();
 
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
   // Estado único de paso — compartido con CVForm vía props
   const [step, setStep] = useState(1);
   const [showResult, setShowResult] = useState(false);
@@ -45,10 +53,16 @@ export default function Builder({ dark, setDark }: Props) {
   const [downloading, setDownloading] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  // Estados para guardar CV
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
   // Protección anti-doble-click
   const isGenerating = useRef(false);
   // Flag: el usuario YA hizo click en "Generar CV" en esta sesión de browser
   const userDidGenerate = useRef(false);
+  // Guardar últimos datos del form para persistir
+  const lastFormData = useRef<any>(null);
 
   // EFECTO: solo muestra resultado si el usuario generó explícitamente
   // NUNCA llama handleGenerate automáticamente
@@ -60,11 +74,11 @@ export default function Builder({ dark, setDark }: Props) {
 
   // ─── GENERAR CV ─────────────────────────────────────────────
   // ÚNICA función que llama handleGenerate — solo desde submit del form
-
   async function handleGenerateWithSuccess(formData: any) {
     if (isGenerating.current || loading) return;
     isGenerating.current = true;
     userDidGenerate.current = true;   // marcar que el usuario generó
+    lastFormData.current = formData;
 
     try {
       await handleGenerate(formData);
@@ -76,98 +90,117 @@ export default function Builder({ dark, setDark }: Props) {
     }
   }
 
- // ─── DESCARGAR PDF ──────────────────────────────────────────
-// html2canvas + jsPDF
-
-async function handleDownload() {
-  if (!html || downloading) return;
-  setDownloading(true);
-
-  const container = document.createElement("div");
-
-  try {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, "text/html");
-
-    container.style.cssText = `
-      position: absolute;
-      left: -9999px;
-      top: 0;
-      width: 794px;
-      min-height: 1123px;
-      background: #ffffff;
-    `;
-
-    // Copiar estilos del HTML generado
-    const styles = doc.querySelectorAll("style");
-    styles.forEach((s) => container.appendChild(s.cloneNode(true)));
-
-    container.innerHTML += doc.body.innerHTML;
-
-    if (doc.body.className) container.className = doc.body.className;
-    if (doc.body.style.cssText) {
-      container.style.cssText += doc.body.style.cssText;
+  // ─── GUARDAR CV ─────────────────────────────────────────────
+  async function handleSaveCV() {
+    if (!user) {
+      navigate("/login");
+      return;
     }
+    if (!html || saving) return;
+    setSaving(true);
+    try {
+      await saveCV(user.uid, html, lastFormData.current ?? { name: "Mi CV" });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (e) {
+      console.error("Error guardando CV:", e);
+    } finally {
+      setSaving(false);
+    }
+  }
 
-    document.body.appendChild(container);
+  // ─── DESCARGAR PDF ──────────────────────────────────────────
+  // html2canvas + jsPDF
+  async function handleDownload() {
+    if (!html || downloading) return;
+    setDownloading(true);
 
-    await new Promise<void>((resolve) => setTimeout(resolve, 1500));
+    const container = document.createElement("div");
 
-    const canvas = await html2canvas(container, {
-      scale: 2,
-      useCORS: true,
-      allowTaint: true,
-      backgroundColor: "#ffffff",
-      logging: false,
-      width: 794,
-      windowWidth: 794,
-    });
+    try {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, "text/html");
 
-    const imgData = canvas.toDataURL("image/png", 1.0);
-    const pdf = new jsPDF("p", "mm", "a4");
+      container.style.cssText = `
+        position: absolute;
+        left: -9999px;
+        top: 0;
+        width: 794px;
+        min-height: 1123px;
+        background: #ffffff;
+      `;
 
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = pdf.internal.pageSize.getHeight();
-    const imgWidth = canvas.width;
-    const imgHeight = canvas.height;
-    const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
+      // Copiar estilos del HTML generado
+      const styles = doc.querySelectorAll("style");
+      styles.forEach((s) => container.appendChild(s.cloneNode(true)));
 
-    const scaledWidth = imgWidth * ratio;
-    const scaledHeight = imgHeight * ratio;
+      container.innerHTML += doc.body.innerHTML;
 
-    if (scaledHeight <= pdfHeight) {
-      pdf.addImage(imgData, "PNG", 0, 0, scaledWidth, scaledHeight);
-    } else {
-      let heightLeft = scaledHeight;
-      let position = 0;
-      pdf.addImage(imgData, "PNG", 0, position, scaledWidth, scaledHeight);
-      heightLeft -= pdfHeight;
+      if (doc.body.className) container.className = doc.body.className;
+      if (doc.body.style.cssText) {
+        container.style.cssText += doc.body.style.cssText;
+      }
 
-      while (heightLeft > 0) {
-        position = heightLeft - scaledHeight;
-        pdf.addPage();
+      document.body.appendChild(container);
+
+      await new Promise<void>((resolve) => setTimeout(resolve, 1500));
+
+      const canvas = await html2canvas(container, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: "#ffffff",
+        logging: false,
+        width: 794,
+        windowWidth: 794,
+      });
+
+      const imgData = canvas.toDataURL("image/png", 1.0);
+      const pdf = new jsPDF("p", "mm", "a4");
+
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
+      const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
+
+      const scaledWidth = imgWidth * ratio;
+      const scaledHeight = imgHeight * ratio;
+
+      if (scaledHeight <= pdfHeight) {
+        pdf.addImage(imgData, "PNG", 0, 0, scaledWidth, scaledHeight);
+      } else {
+        let heightLeft = scaledHeight;
+        let position = 0;
         pdf.addImage(imgData, "PNG", 0, position, scaledWidth, scaledHeight);
         heightLeft -= pdfHeight;
+
+        while (heightLeft > 0) {
+          position = heightLeft - scaledHeight;
+          pdf.addPage();
+          pdf.addImage(imgData, "PNG", 0, position, scaledWidth, scaledHeight);
+          heightLeft -= pdfHeight;
+        }
       }
-    }
 
-    pdf.save("mi-cv-skillara.pdf");
+      pdf.save("mi-cv-skillara.pdf");
 
-  } catch (e) {
-    console.error("Error generando PDF:", e);
-    const pw = window.open("", "_blank");
-    if (pw) {
-      pw.document.write(html);
-      pw.document.close();
-      setTimeout(() => pw.print(), 800);
+    } catch (e) {
+      console.error("Error generando PDF:", e);
+      const pw = window.open("", "_blank");
+      if (pw) {
+        pw.document.write(html);
+        pw.document.close();
+        setTimeout(() => pw.print(), 800);
+      }
+    } finally {
+      if (container.parentNode) {
+        container.parentNode.removeChild(container);
+      }
+      setDownloading(false);
     }
-  } finally {
-    if (container.parentNode) {
-      container.parentNode.removeChild(container);
-    }
-    setDownloading(false);
   }
-}
+
   const goToStep = useCallback((targetStep: number) => {
     if (targetStep >= 1 && targetStep <= 4) {
       setStep(targetStep);
@@ -222,8 +255,11 @@ async function handleDownload() {
 
         {/* LOGO */}
         <div className="flex items-center gap-2.5 shrink-0">
-          <div className="w-8 h-8 rounded-xl flex items-center justify-center text-white font-black text-xs"
-            style={{ background: "linear-gradient(135deg, var(--accent-1), var(--accent-2))" }}>S</div>
+          <img
+              src="/images/logo.png"
+              alt="Skillara AI"
+              className="w-9 h-9 rounded-xl object-cover shadow-lg"
+            />
           <div className="hidden sm:block">
             <p className="text-sm font-bold leading-none" style={{ fontFamily: "'Syne', sans-serif" }}>Skillara AI</p>
             <p className="text-[10px] mt-0.5" style={{ color: "var(--text-muted)" }}>Generador de CV</p>
@@ -301,6 +337,25 @@ async function handleDownload() {
             className="md:hidden w-9 h-9 rounded-xl flex items-center justify-center"
             style={{ background: "var(--bg-card2)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
             {mobileMenuOpen ? <X size={16} /> : <Menu size={16} />}
+          </button>
+
+          {/* BOTÓN INICIO */}
+          <button
+            onClick={() => navigate("/")}
+            className="w-9 h-9 rounded-xl flex items-center justify-center transition hover:scale-110"
+            style={{ background: "var(--bg-card2)", border: "1px solid var(--border)", color: "var(--text-muted)" }}
+            title="Volver al inicio"
+          >
+            <Home size={16} />
+          </button>
+          {/* BOTÓN MIS CVs */}
+          <button
+            onClick={() => navigate("/dashboard")}
+            className="w-9 h-9 rounded-xl flex items-center justify-center transition hover:scale-110"
+            style={{ background: "var(--bg-card2)", border: "1px solid var(--border)", color: "var(--text-muted)" }}
+            title="Mis CVs guardados"
+          >
+            <FileText size={16} />
           </button>
 
           <button onClick={() => setDark(!dark)}
@@ -431,6 +486,7 @@ async function handleDownload() {
               onSubmit={handleGenerateWithSuccess}
               loading={loading}
               mode={mode}
+              navigate={navigate}
             />
           </div>
         )}
@@ -456,6 +512,28 @@ async function handleDownload() {
                     className="btn-ghost flex items-center gap-2 text-sm">
                     <ChevronLeft size={16} />Editar habilidades
                   </button>
+
+                  {/* BOTÓN GUARDAR CV */}
+                  <button
+                    onClick={handleSaveCV}
+                    disabled={saving || saved}
+                    className="flex items-center gap-2 text-sm px-5 py-2.5 rounded-xl font-semibold transition hover:scale-105"
+                    style={{
+                      background: saved ? "rgba(16,185,129,0.12)" : "var(--bg-card2)",
+                      border: saved ? "1px solid rgba(16,185,129,0.3)" : "1px solid var(--border)",
+                      color: saved ? "#10b981" : "var(--text)",
+                    }}
+                  >
+                    {saving ? (
+                      <Loader2 size={16} className="animate-spin" />
+                    ) : saved ? (
+                      <Check size={16} />
+                    ) : (
+                      <Save size={16} />
+                    )}
+                    {saving ? "Guardando..." : saved ? "¡Guardado!" : user ? "Guardar CV" : "Iniciar sesión para guardar"}
+                  </button>
+
                   <button onClick={handleDownload} disabled={downloading}
                     className="btn-primary flex items-center gap-2 text-sm">
                     {downloading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}

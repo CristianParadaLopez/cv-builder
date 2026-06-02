@@ -36,15 +36,14 @@ export default function Footer() {
       { label: "Portafolio", href: "#", disabled: true },
     ],
     recursos: [
-      { label: "¿Qué es un ATS?", href: "/guia#ats" },
-      { label: "Plataformas de Empleo", href: "/guia#plataformas" },
-      { label: "Seguridad Laboral", href: "/guia#seguridad" },
-      { label: "Preguntas Frecuentes", href: "/guia#faq" },
+      { label: "¿Qué es un ATS?", href: "/ats" },
+      { label: "Plataformas de Empleo", href: "/plataformas" },
+      { label: "Preguntas Frecuentes", href: "/faq" },
     ],
     empresa: [
-      { label: "Sobre Skillara", href: "#about" },
-      { label: "Nuestro Equipo", href: "#equipo" },
-      { label: "Contacto", href: "#contacto" },
+      { label: "Sobre Skillara", href: "/about" },
+      { label: "Nuestro Equipo", href: "/about#equipo" },
+      { label: "Contacto", href: "/about#contacto" },
     ],
 
   };
@@ -60,15 +59,11 @@ export default function Footer() {
           {/* Brand + Equipo */}
           <div className="lg:col-span-2">
             <div className="flex items-center gap-3 mb-4">
-              <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-black text-sm shadow-lg"
-                style={{
-                  background:
-                    "linear-gradient(135deg, var(--accent-1), var(--accent-2))",
-                }}
-              >
-                S
-              </div>
+              <img
+              src="/images/logotext.png"
+              alt="Skillara AI"
+              className="w-9 h-9 shadow-lg"
+            />
               <div>
                 <span
                   className="text-lg font-bold tracking-tight"
@@ -94,7 +89,7 @@ export default function Footer() {
                 style={{ color: "var(--text-muted)" }}
               >
                 <Users size={12} className="inline mr-1" />
-                Nuestro Equipo — {teamMembers.length} Integrantes
+                Nuestro Equipo
               </p>
               <div className="flex -space-x-3 overflow-hidden">
                 {teamMembers.map((member) => (
@@ -133,28 +128,6 @@ export default function Footer() {
               >
                 <Code2 size={15} />
               </a>
-              <button
-                className="w-9 h-9 rounded-lg flex items-center justify-center transition-all hover:scale-110"
-                style={{
-                  background: "var(--bg-card2)",
-                  border: "1px solid var(--border)",
-                  color: "var(--text-muted)",
-                }}
-                title="Telegram"
-              >
-                <Send size={15} />
-              </button>
-              <button
-                className="w-9 h-9 rounded-lg flex items-center justify-center transition-all hover:scale-110"
-                style={{
-                  background: "var(--bg-card2)",
-                  border: "1px solid var(--border)",
-                  color: "var(--text-muted)",
-                }}
-                title="LinkedIn"
-              >
-                <LinkIcon size={15} />
-              </button>
             </div>
           </div>
 
@@ -225,20 +198,11 @@ export default function Footer() {
             style={{ color: "var(--text-muted)" }}
           >
             <Sparkles size={14} style={{ color: "var(--accent-1)" }} />
-            <span>Skillara AI &copy; {currentYear}</span>
+            <span>Skillara AI  {currentYear}</span>
             <span className="hidden md:inline">·</span>
             <span className="hidden md:inline">
-              Plataforma universitaria impulsada con IA
+              Plataforma de CVs impulsada con IA
             </span>
-          </div>
-
-          <div
-            className="flex items-center gap-1 text-xs"
-            style={{ color: "var(--text-muted)" }}
-          >
-            <span>Hecho con</span>
-            <Heart size={12} className="text-red-500 fill-red-500" />
-            <span>en El Salvador</span>
           </div>
 
           <div
@@ -248,9 +212,7 @@ export default function Footer() {
             <span className="flex items-center gap-1">
               <Shield size={12} /> Datos seguros
             </span>
-            <span className="flex items-center gap-1">
-              <Users size={12} /> {teamMembers.length} integrantes
-            </span>
+            
           </div>
         </div>
       </div>
