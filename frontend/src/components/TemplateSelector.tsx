@@ -34,7 +34,7 @@ interface TemplateData {
   features: string[];
   bestFor: string[];
   atsCompatible: boolean;
-  previewHTML: string; // HTML miniatura del CV
+  previewHTML: string;
   stats: { label: string; value: string }[];
 }
 
@@ -238,7 +238,6 @@ export default function TemplateSelector({ selected, onSelect, selectedMode, onS
   const [showPlatformGuide, setShowPlatformGuide] = useState(false);
   const [animatingCard, setAnimatingCard] = useState<string | null>(null);
 
-  // Animación de selección
   const handleSelect = (id: CVStyle) => {
     setAnimatingCard(id);
     setTimeout(() => {
@@ -253,8 +252,6 @@ export default function TemplateSelector({ selected, onSelect, selectedMode, onS
     <div className="space-y-8">
       {/* Header */}
       <div className="text-center">
-        
-       
         <p className="text-lg max-w-2xl mx-auto" style={{ color: "var(--text-muted)" }}>
           Cada estilo está optimizado para diferentes industrias y plataformas de empleo.
         </p>
@@ -268,11 +265,11 @@ export default function TemplateSelector({ selected, onSelect, selectedMode, onS
             className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold transition-all"
             style={{
               background: selectedMode === "ats" ? "var(--bg-card)" : "transparent",
-              border: selectedMode === "ats" ? "1px solid var(--accent-1)" : "1px solid transparent",
+              border: selectedMode === "ats" ? "2px solid #10b981" : "1px solid transparent",
               color: selectedMode === "ats" ? "var(--text)" : "var(--text-muted)",
             }}
           >
-            <FileText size={16} style={{ color: selectedMode === "ats" ? "var(--accent-1)" : "var(--text-muted)" }} />
+            <FileText size={16} style={{ color: selectedMode === "ats" ? "#10b981" : "var(--text-muted)" }} />
             <span>Modo ATS</span>
             <span className="text-xs px-2 py-0.5 rounded-full ml-1"
               style={{ background: "rgba(16,185,129,0.15)", color: "#10b981" }}>
@@ -284,11 +281,11 @@ export default function TemplateSelector({ selected, onSelect, selectedMode, onS
             className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold transition-all"
             style={{
               background: selectedMode === "designed" ? "var(--bg-card)" : "transparent",
-              border: selectedMode === "designed" ? "1px solid var(--accent-1)" : "1px solid transparent",
+              border: selectedMode === "designed" ? "2px solid #7c3aed" : "1px solid transparent",
               color: selectedMode === "designed" ? "var(--text)" : "var(--text-muted)",
             }}
           >
-            <Layout size={16} style={{ color: selectedMode === "designed" ? "var(--accent-1)" : "var(--text-muted)" }} />
+            <Layout size={16} style={{ color: selectedMode === "designed" ? "#7c3aed" : "var(--text-muted)" }} />
             <span>Modo Diseñado</span>
             <span className="text-xs px-2 py-0.5 rounded-full ml-1"
               style={{ background: "rgba(124,58,237,0.15)", color: "#7c3aed" }}>
@@ -325,6 +322,7 @@ export default function TemplateSelector({ selected, onSelect, selectedMode, onS
               onMouseEnter={() => setHoveredTemplate(template.id)}
               onMouseLeave={() => setHoveredTemplate(null)}
             >
+              {/* Main card button - solo la parte clickeable */}
               <button
                 onClick={() => isCompatible && handleSelect(template.id)}
                 disabled={!isCompatible}
@@ -334,13 +332,13 @@ export default function TemplateSelector({ selected, onSelect, selectedMode, onS
                 style={{
                   background: isSelected ? "var(--bg-card2)" : "var(--bg-card)",
                   border: isSelected 
-                    ? "2px solid var(--accent-1)" 
+                    ? "3px solid #10b981" 
                     : isHovered 
                       ? "2px solid var(--border)" 
                       : "1px solid var(--border)",
                   transform: isHovered && isCompatible ? "translateY(-4px)" : "translateY(0)",
                   boxShadow: isSelected 
-                    ? "0 0 0 4px rgba(59,130,246,0.12), 0 20px 40px rgba(0,0,0,0.1)" 
+                    ? "0 0 0 4px rgba(16,185,129,0.2), 0 20px 40px rgba(0,0,0,0.1)" 
                     : isHovered 
                       ? "0 20px 40px rgba(0,0,0,0.15)" 
                       : "none",
@@ -348,7 +346,6 @@ export default function TemplateSelector({ selected, onSelect, selectedMode, onS
               >
                 {/* Preview Area */}
                 <div className={`h-48 bg-gradient-to-r ${template.gradient} relative overflow-hidden p-4`}>
-                  {/* Mini CV Preview */}
                   <div className="absolute inset-4 rounded-xl overflow-hidden shadow-2xl"
                     style={{ 
                       transform: isHovered ? "scale(1.02) rotate(-1deg)" : "scale(1) rotate(0deg)",
@@ -362,11 +359,11 @@ export default function TemplateSelector({ selected, onSelect, selectedMode, onS
                     />
                   </div>
 
-                  {/* Selected Badge */}
+                  {/* Selected Badge - VERDE MÁS VISIBLE */}
                   {isSelected && (
-                    <div className="absolute top-4 right-4 z-10">
-                      <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-lg">
-                        <CheckCircle2 size={18} className="text-blue-500" />
+                    <div className="absolute top-3 right-3 z-10">
+                      <div className="w-9 h-9 rounded-full bg-emerald-500 flex items-center justify-center shadow-lg ring-2 ring-emerald-400 ring-offset-2 ring-offset-transparent">
+                        <CheckCircle2 size={20} className="text-white" />
                       </div>
                     </div>
                   )}
@@ -429,32 +426,31 @@ export default function TemplateSelector({ selected, onSelect, selectedMode, onS
                       </span>
                     ))}
                   </div>
-
-                  {/* Features toggle */}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowDetails(showDetails === template.id ? null : template.id);
-                    }}
-                    className="flex items-center gap-1 text-xs font-semibold transition hover:opacity-70"
-                    style={{ color: "var(--accent-1)" }}
-                  >
-                    {showDetails === template.id ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                    {showDetails === template.id ? "Ocultar detalles" : "Ver características"}
-                  </button>
-
-                  {showDetails === template.id && (
-                    <ul className="mt-3 space-y-1.5 animate-slide-up">
-                      {template.features.map((feature, i) => (
-                        <li key={i} className="flex items-start gap-2 text-xs" style={{ color: "var(--text-muted)" }}>
-                          <CheckCircle2 size={12} className="shrink-0 mt-0.5" style={{ color: "var(--accent-1)" }} />
-                          {feature}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
                 </div>
               </button>
+
+              {/* Features toggle - FUERA del button, como div separado */}
+              <div className="px-5 pb-4">
+                <div
+                  onClick={() => setShowDetails(showDetails === template.id ? null : template.id)}
+                  className="flex items-center gap-1 text-xs font-semibold transition hover:opacity-70 cursor-pointer select-none"
+                  style={{ color: "var(--accent-1)" }}
+                >
+                  {showDetails === template.id ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                  {showDetails === template.id ? "Ocultar detalles" : "Ver características"}
+                </div>
+
+                {showDetails === template.id && (
+                  <ul className="mt-3 space-y-1.5 animate-slide-up">
+                    {template.features.map((feature, i) => (
+                      <li key={i} className="flex items-start gap-2 text-xs" style={{ color: "var(--text-muted)" }}>
+                        <CheckCircle2 size={12} className="shrink-0 mt-0.5" style={{ color: "var(--accent-1)" }} />
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </div>
           );
         })}
@@ -513,7 +509,7 @@ export default function TemplateSelector({ selected, onSelect, selectedMode, onS
       {/* Selected Summary */}
       {activeTemplate && (
         <div className="max-w-2xl mx-auto glass-card rounded-2xl p-6 animate-slide-up"
-          style={{ border: "1px solid var(--accent-1)" }}>
+          style={{ border: "3px solid #10b981" }}>
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white"
               style={{ background: activeTemplate.colors[0] }}>
