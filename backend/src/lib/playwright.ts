@@ -1,5 +1,19 @@
-import { chromium } from 'playwright';
+import { chromium, Browser } from 'playwright';
 
-const browser = await chromium.launch({
-  args: ['--no-sandbox', '--disable-setuid-sandbox']
-});
+let browser: Browser | null = null;
+
+export async function getBrowser(): Promise<Browser> {
+  if (!browser) {
+    browser = await chromium.launch({
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
+  }
+  return browser;
+}
+
+export async function closeBrowser(): Promise<void> {
+  if (browser) {
+    await browser.close();
+    browser = null;
+  }
+}
