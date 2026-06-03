@@ -4,8 +4,7 @@ import {
   Sun, Moon, Download, ChevronLeft, ChevronRight,
   Palette, User, Briefcase, Wrench, Rocket,
   FileDown, Loader2, Check, Menu, X, FileCheck,
-  Home, Save,
-  FileText,
+  Home, Save, FileText, AlertCircle, RotateCcw, WifiOff
 } from "lucide-react";
 
 import html2canvas from "html2canvas";
@@ -56,6 +55,7 @@ export default function Builder({ dark, setDark }: Props) {
   // Estados para guardar CV
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [pdfError, setPdfError] = useState<string | null>(null);
 
   // Protección anti-doble-click
   const isGenerating = useRef(false);
@@ -63,6 +63,7 @@ export default function Builder({ dark, setDark }: Props) {
   const userDidGenerate = useRef(false);
   // Guardar últimos datos del form para persistir
   const lastFormData = useRef<any>(null);
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
 
   // EFECTO: solo muestra resultado si el usuario generó explícitamente
   // NUNCA llama handleGenerate automáticamente
@@ -71,6 +72,27 @@ export default function Builder({ dark, setDark }: Props) {
       setShowResult(true);
     }
   }, [html, loading]);
+
+  // Cerrar menú móvil al hacer click fuera
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (
+        mobileMenuOpen &&
+        mobileMenuRef.current &&
+        !mobileMenuRef.current.contains(e.target as Node)
+      ) {
+        setMobileMenuOpen(false);
+      }
+    }
+    if (mobileMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      document.body.style.overflow = "hidden";
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.body.style.overflow = "";
+    };
+  }, [mobileMenuOpen]);
 
   // ─── GENERAR CV ─────────────────────────────────────────────
   // ÚNICA función que llama handleGenerate — solo desde submit del form
@@ -98,12 +120,14 @@ export default function Builder({ dark, setDark }: Props) {
     }
     if (!html || saving) return;
     setSaving(true);
+    setPdfError(null);
     try {
       await saveCV(user.uid, html, lastFormData.current ?? { name: "Mi CV" });
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (e) {
       console.error("Error guardando CV:", e);
+      setPdfError("No se pudo guardar. Intentá de nuevo.");
     } finally {
       setSaving(false);
     }
@@ -114,6 +138,7 @@ export default function Builder({ dark, setDark }: Props) {
   async function handleDownload() {
     if (!html || downloading) return;
     setDownloading(true);
+    setPdfError(null);
 
     const container = document.createElement("div");
 
@@ -122,12 +147,13 @@ export default function Builder({ dark, setDark }: Props) {
       const doc = parser.parseFromString(html, "text/html");
 
       container.style.cssText = `
-        position: absolute;
+        position: fixed;
         left: -9999px;
         top: 0;
         width: 794px;
         min-height: 1123px;
         background: #ffffff;
+        z-index: -1;
       `;
 
       // Copiar estilos del HTML generado
@@ -183,15 +209,53 @@ export default function Builder({ dark, setDark }: Props) {
         }
       }
 
-      pdf.save("mi-cv-skillara.pdf");
+      const fileName = lastFormData.current?.name
+        ? `CV-${lastFormData.current.name.replace(/\s+/g, "-")}.pdf`
+        : "mi-cv-skillara.pdf";
+
+      pdf.save(fileName);
 
     } catch (e) {
       console.error("Error generando PDF:", e);
+      setPdfError("Error al generar PDF. Se abrió alternativa de impresión.");
       const pw = window.open("", "_blank");
       if (pw) {
-        pw.document.write(html);
+        pw.document.write(`
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <title>Mi CV - Skillara</title>
+              <meta name="viewport" content="width=device-width, initial-scale=1">
+              <style>
+                @media print {
+                  body { margin: 0; }
+                  .no-print { display: none; }
+                }
+                .print-btn {
+                  position: fixed;
+                  top: 20px;
+                  right: 20px;
+                  padding: 12px 24px;
+                  background: #059669;
+                  color: white;
+                  border: none;
+                  border-radius: 8px;
+                  cursor: pointer;
+                  font-family: system-ui, sans-serif;
+                  font-size: 14px;
+                  z-index: 1000;
+                  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                }
+                .print-btn:hover { background: #047857; }
+              </style>
+            </head>
+            <body>
+              <button class="print-btn no-print" onclick="window.print()">🖨️ Imprimir / Guardar como PDF</button>
+              ${html}
+            </body>
+          </html>
+        `);
         pw.document.close();
-        setTimeout(() => pw.print(), 800);
       }
     } finally {
       if (container.parentNode) {
@@ -206,6 +270,7 @@ export default function Builder({ dark, setDark }: Props) {
       setStep(targetStep);
       setShowResult(false);
       setMobileMenuOpen(false);
+      setPdfError(null);
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
   }, []);
@@ -214,6 +279,7 @@ export default function Builder({ dark, setDark }: Props) {
     if (html) {
       setShowResult(true);
       setMobileMenuOpen(false);
+      setPdfError(null);
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
   }, [html]);
@@ -331,42 +397,46 @@ export default function Builder({ dark, setDark }: Props) {
           )}
         </div>
 
-        {/* RIGHT ACTIONS */}
+        {/* RIGHT ACTIONS - touch targets más grandes */}
         <div className="flex items-center gap-2 shrink-0">
           <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden w-9 h-9 rounded-xl flex items-center justify-center"
-            style={{ background: "var(--bg-card2)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
-            {mobileMenuOpen ? <X size={16} /> : <Menu size={16} />}
+            className="md:hidden w-11 h-11 rounded-xl flex items-center justify-center active:scale-95 transition-transform"
+            style={{ background: "var(--bg-card2)", border: "1px solid var(--border)", color: "var(--text-muted)" }}
+            aria-label={mobileMenuOpen ? "Cerrar menú" : "Abrir menú"}>
+            {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
           </button>
 
           {/* BOTÓN INICIO */}
           <button
             onClick={() => navigate("/")}
-            className="w-9 h-9 rounded-xl flex items-center justify-center transition hover:scale-110"
+            className="w-11 h-11 rounded-xl flex items-center justify-center transition hover:scale-110 active:scale-95"
             style={{ background: "var(--bg-card2)", border: "1px solid var(--border)", color: "var(--text-muted)" }}
             title="Volver al inicio"
+            aria-label="Volver al inicio"
           >
             <Home size={16} />
           </button>
           {/* BOTÓN MIS CVs */}
           <button
             onClick={() => navigate("/dashboard")}
-            className="w-9 h-9 rounded-xl flex items-center justify-center transition hover:scale-110"
+            className="hidden sm:flex w-11 h-11 rounded-xl items-center justify-center transition hover:scale-110 active:scale-95"
             style={{ background: "var(--bg-card2)", border: "1px solid var(--border)", color: "var(--text-muted)" }}
             title="Mis CVs guardados"
+            aria-label="Mis CVs guardados"
           >
             <FileText size={16} />
           </button>
 
           <button onClick={() => setDark(!dark)}
-            className="w-9 h-9 rounded-xl flex items-center justify-center transition hover:scale-110"
-            style={{ background: "var(--bg-card2)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
+            className="w-11 h-11 rounded-xl flex items-center justify-center transition hover:scale-110 active:scale-95"
+            style={{ background: "var(--bg-card2)", border: "1px solid var(--border)", color: "var(--text-muted)" }}
+            aria-label={dark ? "Modo claro" : "Modo oscuro"}>
             {dark ? <Sun size={16} /> : <Moon size={16} />}
           </button>
 
           {html && showResult && (
             <button onClick={handleDownload} disabled={downloading}
-              className="btn-primary flex items-center gap-2 py-2 px-3 sm:px-4 text-xs sm:text-sm">
+              className="btn-primary flex items-center gap-2 py-2.5 px-3 sm:px-4 text-xs sm:text-sm active:scale-95 transition-transform">
               {downloading ? <Loader2 size={14} className="animate-spin" /> : <FileDown size={14} />}
               <span className="hidden sm:inline">{downloading ? "Preparando..." : "Descargar PDF"}</span>
               <span className="sm:hidden">PDF</span>
@@ -375,52 +445,61 @@ export default function Builder({ dark, setDark }: Props) {
         </div>
       </header>
 
-      {/* MOBILE MENU */}
+      {/* MOBILE MENU - con backdrop y cierre al click fuera */}
       {mobileMenuOpen && (
-        <div className="md:hidden fixed inset-x-0 top-[60px] z-40 border-b p-4 space-y-2"
-          style={{ background: "var(--bg-card)", borderColor: "var(--border)", backdropFilter: "blur(20px)" }}>
-          {FORM_STEPS.map((s, i) => {
-            const stepNum = i + 1;
-            const active = isStepActive(stepNum);
-            const done = isStepDone(stepNum);
-            return (
-              <button key={stepNum} onClick={() => goToStep(stepNum)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium ${active ? "text-white" : ""}`}
-                style={{
-                  background: active ? "linear-gradient(135deg, var(--accent-1), var(--accent-2))" : done ? "var(--bg-card2)" : "transparent",
-                  color: active ? "white" : "var(--text)", border: "1px solid var(--border)",
-                }}>
-                <span className="w-6 h-6 rounded-lg flex items-center justify-center text-xs"
-                  style={{ background: active ? "rgba(255,255,255,0.2)" : "var(--bg-card2)" }}>
-                  {done && !active ? <Check size={14} /> : <s.icon size={14} />}
-                </span>
-                <div className="flex-1 text-left">
-                  <p className="font-semibold">{s.label}</p>
-                  <p className="text-xs opacity-70">{s.description}</p>
-                </div>
-                {done && !active && <Check size={16} className="text-emerald-400" />}
-                {active && <div className="w-2 h-2 rounded-full bg-white animate-pulse" />}
-              </button>
-            );
-          })}
-          <div className="border-t my-2" style={{ borderColor: "var(--border)" }} />
-          <button onClick={goToResult} disabled={!html}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium ${showResult ? "text-white" : ""} ${!html ? "opacity-40 cursor-not-allowed" : ""}`}
-            style={{
-              background: showResult ? "linear-gradient(135deg, #059669, #10b981)" : html ? "var(--bg-card2)" : "transparent",
-              color: showResult ? "white" : "var(--text)", border: "1px solid var(--border)",
-            }}>
-            <span className="w-6 h-6 rounded-lg flex items-center justify-center text-xs"
-              style={{ background: showResult ? "rgba(255,255,255,0.2)" : "var(--bg-card2)" }}>
-              {showResult ? <FileCheck size={14} /> : <Rocket size={14} />}
-            </span>
-            <div className="flex-1 text-left">
-              <p className="font-semibold">Resultado</p>
-              <p className="text-xs opacity-70">{html ? "Tu CV está listo" : "Completá los pasos primero"}</p>
-            </div>
-            {html && !showResult && <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />}
-          </button>
-        </div>
+        <>
+          <div
+            className="md:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
+            onClick={() => setMobileMenuOpen(false)}
+            aria-hidden="true"
+          />
+          <div
+            ref={mobileMenuRef}
+            className="md:hidden fixed inset-x-0 top-[60px] z-50 border-b p-4 space-y-2 rounded-b-2xl shadow-2xl"
+            style={{ background: "var(--bg-card)", borderColor: "var(--border)", backdropFilter: "blur(20px)" }}>
+            {FORM_STEPS.map((s, i) => {
+              const stepNum = i + 1;
+              const active = isStepActive(stepNum);
+              const done = isStepDone(stepNum);
+              return (
+                <button key={stepNum} onClick={() => goToStep(stepNum)}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium ${active ? "text-white" : ""}`}
+                  style={{
+                    background: active ? "linear-gradient(135deg, var(--accent-1), var(--accent-2))" : done ? "var(--bg-card2)" : "transparent",
+                    color: active ? "white" : "var(--text)", border: "1px solid var(--border)",
+                  }}>
+                  <span className="w-6 h-6 rounded-lg flex items-center justify-center text-xs"
+                    style={{ background: active ? "rgba(255,255,255,0.2)" : "var(--bg-card2)" }}>
+                    {done && !active ? <Check size={14} /> : <s.icon size={14} />}
+                  </span>
+                  <div className="flex-1 text-left">
+                    <p className="font-semibold">{s.label}</p>
+                    <p className="text-xs opacity-70">{s.description}</p>
+                  </div>
+                  {done && !active && <Check size={16} className="text-emerald-400" />}
+                  {active && <div className="w-2 h-2 rounded-full bg-white animate-pulse" />}
+                </button>
+              );
+            })}
+            <div className="border-t my-2" style={{ borderColor: "var(--border)" }} />
+            <button onClick={goToResult} disabled={!html}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium ${showResult ? "text-white" : ""} ${!html ? "opacity-40 cursor-not-allowed" : ""}`}
+              style={{
+                background: showResult ? "linear-gradient(135deg, #059669, #10b981)" : html ? "var(--bg-card2)" : "transparent",
+                color: showResult ? "white" : "var(--text)", border: "1px solid var(--border)",
+              }}>
+              <span className="w-6 h-6 rounded-lg flex items-center justify-center text-xs"
+                style={{ background: showResult ? "rgba(255,255,255,0.2)" : "var(--bg-card2)" }}>
+                {showResult ? <FileCheck size={14} /> : <Rocket size={14} />}
+              </span>
+              <div className="flex-1 text-left">
+                <p className="font-semibold">Resultado</p>
+                <p className="text-xs opacity-70">{html ? "Tu CV está listo" : "Completá los pasos primero"}</p>
+              </div>
+              {html && !showResult && <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />}
+            </button>
+          </div>
+        </>
       )}
 
       {/* SUCCESS TOAST */}
@@ -428,6 +507,18 @@ export default function Builder({ dark, setDark }: Props) {
         <div className="fixed top-20 sm:top-24 left-1/2 -translate-x-1/2 z-50 text-white px-5 sm:px-6 py-3 rounded-2xl shadow-2xl text-sm font-semibold flex items-center gap-2 animate-slide-up"
           style={{ background: "linear-gradient(135deg, #059669, #10b981)" }}>
           <Check size={16} />CV generado correctamente
+        </div>
+      )}
+
+      {/* ERROR TOAST */}
+      {pdfError && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl shadow-2xl text-sm font-semibold flex items-center gap-2 max-w-[90vw] sm:max-w-md animate-slide-up"
+          style={{ background: "rgba(239, 68, 68, 0.95)", color: "white" }}>
+          <AlertCircle size={16} />
+          <span className="flex-1">{pdfError}</span>
+          <button onClick={() => setPdfError(null)} className="p-1 rounded-lg hover:bg-white/20">
+            <X size={14} />
+          </button>
         </div>
       )}
 
@@ -495,9 +586,24 @@ export default function Builder({ dark, setDark }: Props) {
         {showResult && (
           <div className="animate-slide-up">
             {error && (
-              <div className="max-w-3xl mx-auto rounded-2xl p-4 sm:p-5 mb-6 text-red-400 text-sm"
+              <div className="max-w-3xl mx-auto rounded-2xl p-4 sm:p-5 mb-6 text-sm"
                 style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}>
-                ❌ {error}
+                <div className="flex items-start gap-3">
+                  <WifiOff size={18} className="text-red-400 shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="font-semibold text-red-400 mb-1">Error de conexión</p>
+                    <p className="text-red-300/80 mb-3">{error}</p>
+                    <button
+                      onClick={() => {
+                        if (lastFormData.current) {
+                          handleGenerateWithSuccess(lastFormData.current);
+                        }
+                      }}
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-colors">
+                      <RotateCcw size={14} /> Reintentar
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -509,7 +615,7 @@ export default function Builder({ dark, setDark }: Props) {
                 </div>
                 <div className="flex flex-wrap gap-3 sm:gap-4 justify-center mt-8 sm:mt-10">
                   <button onClick={() => { setShowResult(false); setStep(4); }}
-                    className="btn-ghost flex items-center gap-2 text-sm">
+                    className="btn-ghost flex items-center gap-2 text-sm active:scale-95 transition-transform">
                     <ChevronLeft size={16} />Editar habilidades
                   </button>
 
@@ -517,7 +623,7 @@ export default function Builder({ dark, setDark }: Props) {
                   <button
                     onClick={handleSaveCV}
                     disabled={saving || saved}
-                    className="flex items-center gap-2 text-sm px-5 py-2.5 rounded-xl font-semibold transition hover:scale-105"
+                    className="flex items-center gap-2 text-sm px-5 py-2.5 rounded-xl font-semibold transition hover:scale-105 active:scale-95"
                     style={{
                       background: saved ? "rgba(16,185,129,0.12)" : "var(--bg-card2)",
                       border: saved ? "1px solid rgba(16,185,129,0.3)" : "1px solid var(--border)",
@@ -535,7 +641,7 @@ export default function Builder({ dark, setDark }: Props) {
                   </button>
 
                   <button onClick={handleDownload} disabled={downloading}
-                    className="btn-primary flex items-center gap-2 text-sm">
+                    className="btn-primary flex items-center gap-2 text-sm active:scale-95 transition-transform">
                     {downloading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
                     {downloading ? "Preparando PDF..." : "Descargar PDF"}
                   </button>
