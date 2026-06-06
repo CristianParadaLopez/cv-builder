@@ -10,6 +10,7 @@ import ATS from "./pages/ATS";
 import FAQ from "./pages/FAQ";
 import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
+import Promo from "./pages/Promo";                       // ← nuevo
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
 export default function App() {
@@ -28,6 +29,7 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Home dark={dark} setDark={setDark} />} />
+        <Route path="/promo" element={<Promo />} />      {/* ← nueva ruta */}
         <Route path="/builder" element={<Builder dark={dark} setDark={setDark} />} />
         <Route path="/guia" element={<Guia />} />
         <Route path="/about" element={<About />} />
